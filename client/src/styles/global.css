@@ -1,0 +1,56 @@
+/* Глобальні стилі: темна тема й акцентні кольори за макетами ТЗ. */
+
+:root {
+  --color-bg-start: #0b1120;
+  --color-bg-end: #111827;
+  --color-sidebar: #070b16;
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+  --color-accent-start: #14b8a6;
+  --color-accent-end: #10b981;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --radius-card: 16px;
+  --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: linear-gradient(180deg, var(--color-bg-start), var(--color-bg-end));
+  -webkit-font-smoothing: antialiased;
+}
+
+.placeholder {
+  display: grid;
+  place-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.placeholder h1 {
+  margin: 0 0 8px;
+  background: linear-gradient(90deg, var(--color-accent-start), var(--color-accent-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.placeholder p {
+  margin: 0;
+  color: var(--color-text-muted);
+}

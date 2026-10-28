@@ -1,0 +1,23 @@
+{
+  "name": "music-library-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SPA-клієнт веб-застосунку «Бібліотека музичних творів» (MusicLibrary)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.5"
+  },
+  "dependencies": {
+    "i18next": "^26.5.11",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^17.1.9",
+    "react-router-dom": "^6.30.6"
+  }
+}
