@@ -2,3 +2,9 @@
 .env
 dist
 server/media
+
+# Документи курсової та локальні дані Postman
+*.docx
+*.pdf
+*.drawio
+.postman/
