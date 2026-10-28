@@ -1,0 +1,16 @@
+{
+  "name": "music-library",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Веб-застосунок «Бібліотека музичних творів» (MusicLibrary): сервер Express і клієнт React",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "test": "npm run test --workspace server"
+  }
+}

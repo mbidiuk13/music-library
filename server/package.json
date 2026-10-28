@@ -1,0 +1,30 @@
+{
+  "name": "music-library-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "REST API веб-застосунку «Бібліотека музичних творів» (MusicLibrary)",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "dev": "node --env-file=../.env --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.3",
+    "helmet": "^8.3.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "jest": "^30.5.2",
+    "supertest": "^7.3.1"
+  }
+}
