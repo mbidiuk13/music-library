@@ -42,7 +42,9 @@ export function errorHandler(err, req, res, next) {
     return;
   }
   if (err.type === 'entity.too.large') {
-    res.status(413).json({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Завеликий розмір запиту' } });
+    res
+      .status(413)
+      .json({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'Завеликий розмір запиту' } });
     return;
   }
 
