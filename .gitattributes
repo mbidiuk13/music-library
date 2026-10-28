@@ -1,0 +1,7 @@
+# Єдині закінчення рядків (LF) у репозиторії незалежно від ОС розробника
+* text=auto eol=lf
+
+*.mp3 binary
+*.wav binary
+*.png binary
+*.jpg binary

@@ -2,6 +2,7 @@
   "name": "music-library",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Веб-застосунок «Бібліотека музичних творів» (MusicLibrary): сервер Express і клієнт React",
   "workspaces": [
     "server",
@@ -14,9 +15,19 @@
     "dev": "concurrently --names server,client --prefix-colors cyan,magenta --kill-others-on-fail \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
     "build": "npm run build --workspace client",
     "start": "npm run start --workspace server",
-    "test": "npm run test --workspace server"
+    "test": "npm run test --workspace server",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "concurrently": "^10.0.6"
+    "@eslint/js": "^9.39.5",
+    "concurrently": "^10.0.6",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10"
   }
 }
