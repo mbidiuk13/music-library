@@ -63,6 +63,12 @@ const config = Object.freeze({
     popularLimit: readPositiveInt('POPULAR_LIMIT', 100),
   }),
 
+  /** Назва системного плейлиста, який створюється кожному користувачу (не можна видалити). */
+  favoritesTitle: 'Улюблені',
+
+  /** Кількість раундів bcrypt для хешування паролів (розділ 3.4 ПЗ). */
+  bcryptSaltRounds: 10,
+
   admin: Object.freeze({
     email: readString('ADMIN_EMAIL'),
     password: readString('ADMIN_PASSWORD'),
