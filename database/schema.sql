@@ -30,8 +30,8 @@ CREATE TABLE
         id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
         user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
-        is_public BOOLEAN NOT NULL DEFAULT true,
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (user_id, title)
     );
 
 CREATE TABLE
