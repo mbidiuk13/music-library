@@ -59,6 +59,17 @@ export async function transaction(fn) {
 }
 
 /**
+ * Перевіряє, що рядок підключення до БД задано (викликається на початку CLI-скриптів).
+ * @returns {void}
+ * @throws {Error} якщо змінну DATABASE_URL не задано в .env.
+ */
+export function assertDatabaseConfigured() {
+  if (!config.databaseUrl) {
+    throw new Error('Не задано DATABASE_URL у файлі .env (див. .env.example)');
+  }
+}
+
+/**
  * Закриває всі з'єднання пулу (наприкінці скриптів і тестів).
  * @returns {Promise<void>}
  */
