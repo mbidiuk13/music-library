@@ -19,7 +19,7 @@ CREATE TABLE
         bpm INT NOT NULL CHECK (bpm > 0),
         key_signature VARCHAR(20) NOT NULL,
         mood VARCHAR(50) NOT NULL,
-        year INT NOT NULL,
+        year INT NOT NULL CHECK (year > 0),
         s3_key VARCHAR(512) NOT NULL,
         play_count INT NOT NULL DEFAULT 0,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -56,4 +56,6 @@ CREATE INDEX idx_track_artist_trgm ON track USING gin (artist gin_trgm_ops);
 
 CREATE INDEX idx_track_genre ON track (genre);
 
-CREATE INDEX idx_history_user ON user_listen_history (user_id);
+CREATE INDEX idx_track_play_count ON track (play_count DESC);
+
+CREATE INDEX idx_history_user ON user_listen_history (user_id, listened_at DESC);
