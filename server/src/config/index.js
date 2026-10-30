@@ -48,6 +48,8 @@ const config = Object.freeze({
   jwt: Object.freeze({
     secret: readString('JWT_SECRET'),
     expiresIn: readString('JWT_EXPIRES_IN', '24h'),
+    /** Строк дії посилання для відновлення пароля. */
+    passwordResetExpiresIn: '15m',
   }),
 
   s3: Object.freeze({

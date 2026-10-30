@@ -38,3 +38,30 @@ export async function login(req, res) {
 export async function me(req, res) {
   res.json({ user: await authService.getCurrentUser(req.user.id) });
 }
+
+/**
+ * POST /api/auth/forgot-password — запит на відновлення пароля.
+ * Відповідь однакова незалежно від того, чи зареєстровано email.
+ * @param {import('express').Request} req - тіло: `{email}`.
+ * @param {import('express').Response} res - 200 `{message}`.
+ * @returns {Promise<void>}
+ */
+export async function forgotPassword(req, res) {
+  await authService.requestPasswordReset(req.body.email);
+  res.json({
+    message:
+      'Якщо обліковий запис з такою поштою існує, ми надіслали на неї посилання для відновлення пароля',
+  });
+}
+
+/**
+ * POST /api/auth/reset-password — встановлення нового пароля за посиланням з листа.
+ * @param {import('express').Request} req - тіло: `{token, password, passwordConfirm}`.
+ * @param {import('express').Response} res - 200 `{message}`.
+ * @returns {Promise<void>}
+ */
+export async function resetPassword(req, res) {
+  const { token, password } = req.body;
+  await authService.resetPassword({ token, password });
+  res.json({ message: 'Пароль змінено. Увійдіть з новим паролем' });
+}

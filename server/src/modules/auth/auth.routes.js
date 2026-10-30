@@ -111,6 +111,30 @@ router.post(
 );
 
 /**
+ * Запит на відновлення пароля.
+ * @route POST /api/auth/forgot-password
+ */
+router.post('/forgot-password', emailRule(), validate, asyncHandler(controller.forgotPassword));
+
+/**
+ * Встановлення нового пароля за токеном із листа.
+ * @route POST /api/auth/reset-password
+ */
+router.post(
+  '/reset-password',
+  body('token')
+    .isString()
+    .withMessage('Посилання для відновлення пароля недійсне')
+    .bail()
+    .notEmpty()
+    .withMessage('Посилання для відновлення пароля недійсне'),
+  newPasswordRule('password'),
+  passwordConfirmRule(),
+  validate,
+  asyncHandler(controller.resetPassword),
+);
+
+/**
  * Дані поточного користувача.
  * @route GET /api/auth/me
  */

@@ -1,19 +1,28 @@
 /**
  * @module modules/auth/auth.service
  * @description Бізнес-логіка Auth Controller: реєстрація (UC-1), вхід (UC-2),
- * отримання поточного користувача. Паролі зберігаються лише як bcrypt-хеш
+ * отримання поточного користувача, відновлення пароля через посилання в листі. Паролі зберігаються лише як bcrypt-хеш
  * (saltRounds = 10) і ніколи не повертаються в API та не логуються.
  */
 
 import bcrypt from 'bcrypt';
 import config from '../../config/index.js';
 import { transaction } from '../../db/pool.js';
+import mailer from '../../services/mailer.js';
 import AppError from '../../utils/AppError.js';
-import { signAccessToken } from '../../utils/jwt.js';
+import {
+  readTokenSubject,
+  signAccessToken,
+  signPasswordResetToken,
+  verifyPasswordResetToken,
+} from '../../utils/jwt.js';
 import * as repository from './auth.repository.js';
 
 /** Код помилки PostgreSQL «порушення унікальності» (unique_violation). */
 const UNIQUE_VIOLATION = '23505';
+
+/** Формат UUID (ідентифікатор користувача з токена перевіряється перед запитом до БД). */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Хеш-заглушка для входу з неіснуючим email: bcrypt.compare виконується завжди,
@@ -96,4 +105,61 @@ export async function getCurrentUser(userId) {
     );
   }
   return toPublicUser(user);
+}
+
+/**
+ * Створює помилку «недійсне посилання для відновлення пароля».
+ * @returns {AppError} 400 INVALID_RESET_TOKEN.
+ */
+function invalidResetToken() {
+  return new AppError(
+    400,
+    'INVALID_RESET_TOKEN',
+    'Посилання для відновлення пароля недійсне або його строк дії минув',
+  );
+}
+
+/**
+ * Надсилає лист із посиланням `${CLIENT_URL}/reset-password?token=…`, якщо email зареєстровано.
+ * Для незареєстрованого email нічого не робить, а відповідь сервера однакова в обох випадках,
+ * тож за нею не можна дізнатися, чи існує обліковий запис. Лист надсилається у фоні,
+ * щоб час відповіді не залежав від роботи поштового сервера.
+ * @param {string} email - email у нижньому регістрі.
+ * @returns {Promise<void>}
+ */
+export async function requestPasswordReset(email) {
+  const user = await repository.findUserByEmail(email);
+  if (!user) return;
+
+  const token = signPasswordResetToken(user);
+  const link = `${config.clientUrl}/reset-password?token=${encodeURIComponent(token)}`;
+  mailer
+    .sendPasswordResetEmail({ to: user.email, username: user.username, link })
+    .catch((err) =>
+      console.error('Не вдалося надіслати лист для відновлення пароля:', err.message),
+    );
+}
+
+/**
+ * Встановлює новий пароль за токеном із листа. Токен одноразовий: після зміни пароля
+ * змінюється хеш, яким він підписаний.
+ * @param {{token: string, password: string}} data - токен і новий (перевірений) пароль.
+ * @returns {Promise<void>}
+ * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен недійсний, прострочений або вже використаний.
+ */
+export async function resetPassword({ token, password }) {
+  const userId = readTokenSubject(token);
+  if (!userId || !UUID_PATTERN.test(userId)) throw invalidResetToken();
+
+  const user = await repository.findUserById(userId);
+  if (!user) throw invalidResetToken();
+  try {
+    verifyPasswordResetToken(token, user.password_hash);
+  } catch {
+    throw invalidResetToken();
+  }
+
+  const newHash = await bcrypt.hash(password, config.bcryptSaltRounds);
+  const changed = await repository.updatePasswordHash(user.id, user.password_hash, newHash);
+  if (!changed) throw invalidResetToken();
 }

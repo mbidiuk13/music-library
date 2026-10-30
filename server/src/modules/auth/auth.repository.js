@@ -36,6 +36,22 @@ export async function findUserById(id) {
 }
 
 /**
+ * Замінює хеш пароля, лише якщо він досі дорівнює очікуваному. Так токен відновлення
+ * спрацьовує один раз навіть при двох одночасних запитах з тим самим посиланням.
+ * @param {string} id - UUID користувача.
+ * @param {string} expectedHash - хеш, з яким перевірено токен відновлення.
+ * @param {string} newHash - новий bcrypt-хеш.
+ * @returns {Promise<boolean>} true, якщо пароль змінено.
+ */
+export async function updatePasswordHash(id, expectedHash, newHash) {
+  const { rowCount } = await query(
+    'UPDATE users SET password_hash = $3 WHERE id = $1 AND password_hash = $2',
+    [id, expectedHash, newHash],
+  );
+  return rowCount === 1;
+}
+
+/**
  * Додає нового користувача з роллю `user`.
  * @param {import('pg').PoolClient} client - з'єднання транзакції.
  * @param {{email: string, username: string, passwordHash: string}} data - дані користувача.
