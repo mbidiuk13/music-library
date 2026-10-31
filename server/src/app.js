@@ -12,6 +12,7 @@ import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { authenticate } from './middleware/auth.js';
 import requireRole from './middleware/requireRole.js';
 import authRoutes from './modules/auth/auth.routes.js';
+import { adminTrackRouter } from './modules/media/media.routes.js';
 
 /**
  * Створює екземпляр Express-застосунку з базовими заходами безпеки та маршрутами API.
@@ -38,6 +39,7 @@ export function createApp() {
 
   // Усі адміністративні маршрути (/api/admin/*) — лише для ролі admin (RBAC, розділ 3.4 ПЗ).
   app.use('/api/admin', authenticate, requireRole('admin'));
+  app.use('/api/admin/tracks', adminTrackRouter);
 
   app.use('/api', notFound);
   app.use(errorHandler);
