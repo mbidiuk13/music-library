@@ -34,6 +34,30 @@ export async function findTrackById(id) {
 }
 
 /**
+ * Пошук треків (FR-4): підрядок `q` у назві, виконавці або жанрі (ILIKE, використовує
+ * trigram-індекси) та/або точний фільтр за жанром. Популярніші треки — першими.
+ * @param {{q?: string, genre?: string, limit: number, offset: number}} params - умови пошуку і пагінація.
+ * @returns {Promise<{tracks: object[], total: number}>} треки сторінки (без s3_key) і загальна кількість знайдених.
+ */
+export async function searchTracks({ q, genre, limit, offset }) {
+  const pattern = q ? `%${escapeLike(q)}%` : null;
+  const where = `WHERE ($1::text IS NULL
+      OR title ILIKE $1 ESCAPE '\\' OR artist ILIKE $1 ESCAPE '\\' OR genre ILIKE $1 ESCAPE '\\')
+    AND ($2::text IS NULL OR genre = $2)`;
+
+  const [list, count] = await Promise.all([
+    query(
+      `SELECT ${PUBLIC_COLUMNS} FROM track ${where}
+       ORDER BY play_count DESC, title, id
+       LIMIT $3 OFFSET $4`,
+      [pattern, genre ?? null, limit, offset],
+    ),
+    query(`SELECT COUNT(*)::int AS total FROM track ${where}`, [pattern, genre ?? null]),
+  ]);
+  return { tracks: list.rows, total: count.rows[0].total };
+}
+
+/**
  * Повертає сторінку списку треків для адмін-панелі (новіші — першими).
  * Пошук: за початком ідентифікатора (у таблиці показуються перші 8 символів UUID) або підрядком назви.
  * @param {{q?: string, limit: number, offset: number}} params - пошуковий запит і пагінація.

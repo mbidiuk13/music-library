@@ -132,6 +132,46 @@ const paginationRules = [
     .toInt(),
 ];
 
+/** Публічні маршрути треків: `/api/tracks`. */
+export const trackRouter = Router();
+
+/**
+ * Пошук за назвою, виконавцем або жанром (`q`) та/або точний фільтр `genre`.
+ * @route GET /api/tracks/search
+ */
+trackRouter.get(
+  '/search',
+  searchTextRule(),
+  query('genre')
+    .optional()
+    .isString()
+    .withMessage('Оберіть жанр зі списку')
+    .bail()
+    .isIn(GENRES)
+    .withMessage('Оберіть жанр зі списку'),
+  query('q')
+    .custom((value, { req }) => Boolean(value) || Boolean(req.query.genre))
+    .withMessage('Введіть пошуковий запит або оберіть жанр'),
+  paginationRules,
+  validate,
+  asyncHandler(controller.searchTracks),
+);
+
+/**
+ * Метадані треку.
+ * @route GET /api/tracks/:id
+ */
+trackRouter.get('/:id', trackIdRule, validate, asyncHandler(controller.getTrack));
+
+/** Довідкові маршрути: `/api/meta`. */
+export const metaRouter = Router();
+
+/**
+ * Словники жанрів, настроїв і тональностей.
+ * @route GET /api/meta/vocabularies
+ */
+metaRouter.get('/vocabularies', controller.getVocabularies);
+
 /** Маршрути адміністратора: `/api/admin/tracks`. */
 export const adminTrackRouter = Router();
 

@@ -4,6 +4,7 @@
  * викликають media.service і формують JSON-відповідь.
  */
 
+import { GENRES, KEYS, MOODS } from '../../config/vocabularies.js';
 import * as mediaService from './media.service.js';
 
 /**
@@ -15,6 +16,44 @@ import * as mediaService from './media.service.js';
 function pickMetadata(body) {
   const { title, artist, genre, bpm, key_signature: keySignature, mood, year } = body;
   return { title, artist, genre, bpm, key_signature: keySignature, mood, year };
+}
+
+/**
+ * GET /api/tracks/search — пошук треків (UC-3).
+ * @param {import('express').Request} req - query: `q`, `genre`, `limit`, `offset`.
+ * @param {import('express').Response} res - 200 `{tracks, total, limit, offset}`.
+ * @returns {Promise<void>}
+ */
+export async function searchTracks(req, res) {
+  const { q, genre, limit, offset } = req.query;
+  res.json(
+    await mediaService.searchTracks({
+      q: q || undefined,
+      genre: genre || undefined,
+      limit,
+      offset,
+    }),
+  );
+}
+
+/**
+ * GET /api/tracks/:id — метадані треку.
+ * @param {import('express').Request} req - params: `id`.
+ * @param {import('express').Response} res - 200 `{track}`.
+ * @returns {Promise<void>}
+ */
+export async function getTrack(req, res) {
+  res.json({ track: await mediaService.getTrack(req.params.id) });
+}
+
+/**
+ * GET /api/meta/vocabularies — словники для випадних списків форми метаданих.
+ * @param {import('express').Request} req - HTTP-запит.
+ * @param {import('express').Response} res - 200 `{genres, moods, keys}`.
+ * @returns {void}
+ */
+export function getVocabularies(req, res) {
+  res.json({ genres: GENRES, moods: MOODS, keys: KEYS });
 }
 
 /**

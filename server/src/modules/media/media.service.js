@@ -1,6 +1,6 @@
 /**
  * @module modules/media/media.service
- * @description Бізнес-логіка Media Service: керування медіатекою адміністратором —
+ * @description Бізнес-логіка Media Service: пошук треків і їхні метадані; керування медіатекою адміністратором —
  * завантаження аудіо в AWS S3 разом із метаданими (UC-9), модерація метаданих (UC-6),
  * видалення треку разом із файлом.
  */
@@ -48,6 +48,49 @@ function storageError(err, action) {
     'STORAGE_ERROR',
     'Помилка файлового сховища. Спробуйте повторити дію пізніше',
   );
+}
+
+/**
+ * Залишає лише поля треку, які можна показувати будь-якому користувачу (без s3_key).
+ * @param {object} track - рядок таблиці track.
+ * @returns {{id: string, title: string, artist: string, genre: string, bpm: number,
+ *   key_signature: string, mood: string, year: number, play_count: number}} публічні дані треку.
+ */
+export function toPublicTrack(track) {
+  return {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    genre: track.genre,
+    bpm: track.bpm,
+    key_signature: track.key_signature,
+    mood: track.mood,
+    year: track.year,
+    play_count: track.play_count,
+  };
+}
+
+/**
+ * Шукає треки за назвою, виконавцем або жанром (UC-3, FR-4).
+ * @param {{q?: string, genre?: string, limit: number, offset: number}} params - пошуковий запит,
+ *   фільтр жанру (хоча б одне з двох перевірено на рівні маршруту) і пагінація.
+ * @returns {Promise<{tracks: object[], total: number, limit: number, offset: number}>} сторінка результатів.
+ */
+export async function searchTracks({ q, genre, limit, offset }) {
+  const { tracks, total } = await repository.searchTracks({ q, genre, limit, offset });
+  return { tracks, total, limit, offset };
+}
+
+/**
+ * Повертає метадані треку.
+ * @param {string} id - UUID треку.
+ * @returns {Promise<object>} публічні дані треку.
+ * @throws {AppError} 404 TRACK_NOT_FOUND.
+ */
+export async function getTrack(id) {
+  const track = await repository.findTrackById(id);
+  if (!track) throw trackNotFound();
+  return toPublicTrack(track);
 }
 
 /**
