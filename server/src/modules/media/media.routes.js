@@ -8,6 +8,7 @@
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { BPM_RANGE, GENRES, KEYS, MOODS, getYearRange } from '../../config/vocabularies.js';
+import { optionalAuth } from '../../middleware/auth.js';
 import uploadAudio from '../../middleware/upload.js';
 import validate from '../../middleware/validate.js';
 import asyncHandler from '../../utils/asyncHandler.js';
@@ -162,6 +163,24 @@ trackRouter.get(
  * @route GET /api/tracks/:id
  */
 trackRouter.get('/:id', trackIdRule, validate, asyncHandler(controller.getTrack));
+
+/**
+ * Pre-signed URL для відтворення.
+ * @route GET /api/tracks/:id/stream
+ */
+trackRouter.get('/:id/stream', trackIdRule, validate, asyncHandler(controller.getStreamUrl));
+
+/**
+ * Облік відтворення: лічильник і (для авторизованого) історія прослуховувань.
+ * @route POST /api/tracks/:id/play
+ */
+trackRouter.post(
+  '/:id/play',
+  optionalAuth,
+  trackIdRule,
+  validate,
+  asyncHandler(controller.registerPlay),
+);
 
 /** Довідкові маршрути: `/api/meta`. */
 export const metaRouter = Router();

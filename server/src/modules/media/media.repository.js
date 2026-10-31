@@ -135,6 +135,37 @@ export async function updateTrack(id, metadata) {
 }
 
 /**
+ * Збільшує лічильник відтворень треку на 1.
+ * @param {import('pg').PoolClient} client - з'єднання транзакції.
+ * @param {string} id - UUID треку.
+ * @returns {Promise<number|undefined>} нове значення play_count або undefined, якщо треку немає.
+ */
+export async function incrementPlayCount(client, id) {
+  const { rows } = await client.query(
+    'UPDATE track SET play_count = play_count + 1 WHERE id = $1 RETURNING play_count',
+    [id],
+  );
+  return rows[0]?.play_count;
+}
+
+/**
+ * Додає запис в історію прослуховувань користувача. Якщо користувача вже видалено
+ * (токен ще дійсний), запис не додається.
+ * @param {import('pg').PoolClient} client - з'єднання транзакції.
+ * @param {string} userId - UUID користувача.
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<void>}
+ */
+export async function insertListen(client, userId, trackId) {
+  await client.query(
+    `INSERT INTO user_listen_history (user_id, track_id)
+     SELECT $1::uuid, $2::uuid
+     WHERE EXISTS (SELECT 1 FROM users WHERE id = $1::uuid)`,
+    [userId, trackId],
+  );
+}
+
+/**
  * Видаляє трек; записи в playlist_track і user_listen_history видаляються каскадно (ON DELETE CASCADE).
  * @param {import('pg').PoolClient} client - з'єднання транзакції.
  * @param {string} id - UUID треку.

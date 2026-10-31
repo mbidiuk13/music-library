@@ -47,6 +47,26 @@ export async function getTrack(req, res) {
 }
 
 /**
+ * GET /api/tracks/:id/stream — тимчасове посилання для відтворення (UC-7).
+ * @param {import('express').Request} req - params: `id`.
+ * @param {import('express').Response} res - 200 `{url, expiresIn}`.
+ * @returns {Promise<void>}
+ */
+export async function getStreamUrl(req, res) {
+  res.json(await mediaService.getStreamUrl(req.params.id));
+}
+
+/**
+ * POST /api/tracks/:id/play — облік відтворення (клієнт викликає, коли трек почав грати).
+ * @param {import('express').Request} req - params: `id`; `req.user` — якщо передано дійсний токен.
+ * @param {import('express').Response} res - 200 `{id, play_count}`.
+ * @returns {Promise<void>}
+ */
+export async function registerPlay(req, res) {
+  res.json(await mediaService.registerPlay(req.params.id, req.user?.id));
+}
+
+/**
  * GET /api/meta/vocabularies — словники для випадних списків форми метаданих.
  * @param {import('express').Request} req - HTTP-запит.
  * @param {import('express').Response} res - 200 `{genres, moods, keys}`.

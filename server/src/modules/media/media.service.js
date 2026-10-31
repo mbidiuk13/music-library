@@ -1,6 +1,7 @@
 /**
  * @module modules/media/media.service
- * @description Бізнес-логіка Media Service: пошук треків і їхні метадані; керування медіатекою адміністратором —
+ * @description Бізнес-логіка Media Service: пошук треків і їхні метадані, посилання для
+ * відтворення, облік прослуховувань; керування медіатекою адміністратором —
  * завантаження аудіо в AWS S3 разом із метаданими (UC-9), модерація метаданих (UC-6),
  * видалення треку разом із файлом.
  */
@@ -91,6 +92,43 @@ export async function getTrack(id) {
   const track = await repository.findTrackById(id);
   if (!track) throw trackNotFound();
   return toPublicTrack(track);
+}
+
+/**
+ * Видає тимчасове посилання для відтворення треку (UC-7). Бакет приватний, тому браузер
+ * отримує файл лише за pre-signed URL, дійсним S3_PRESIGN_TTL секунд (за замовчуванням 60 хв).
+ * @param {string} id - UUID треку.
+ * @returns {Promise<{url: string, expiresIn: number}>} посилання і строк його дії, секунд.
+ * @throws {AppError} 404 TRACK_NOT_FOUND; 500 STORAGE_ERROR, якщо посилання не вдалося створити.
+ */
+export async function getStreamUrl(id) {
+  const track = await repository.findTrackById(id);
+  if (!track) throw trackNotFound();
+
+  const expiresIn = config.s3.presignTtl;
+  try {
+    return { url: await s3.getPresignedUrl(track.s3_key, expiresIn), expiresIn };
+  } catch (err) {
+    throw storageError(err, `підписати посилання на ${track.s3_key}`);
+  }
+}
+
+/**
+ * Фіксує початок відтворення треку в одній транзакції: `play_count + 1` і, якщо користувач
+ * авторизований, запис в user_listen_history (дані для Recommendation Engine).
+ * Якщо будь-який крок не вдався, жодна зі змін не зберігається.
+ * @param {string} trackId - UUID треку.
+ * @param {string} [userId] - UUID авторизованого користувача (для гостя — undefined).
+ * @returns {Promise<{id: string, play_count: number}>} нове значення лічильника відтворень.
+ * @throws {AppError} 404 TRACK_NOT_FOUND.
+ */
+export async function registerPlay(trackId, userId) {
+  return transaction(async (client) => {
+    const playCount = await repository.incrementPlayCount(client, trackId);
+    if (playCount === undefined) throw trackNotFound();
+    if (userId) await repository.insertListen(client, userId, trackId);
+    return { id: trackId, play_count: playCount };
+  });
 }
 
 /**
