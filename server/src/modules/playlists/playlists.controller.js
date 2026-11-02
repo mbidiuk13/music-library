@@ -58,3 +58,25 @@ export async function deletePlaylist(req, res) {
   await playlistService.deletePlaylist(req.user.id, req.params.id);
   res.status(204).end();
 }
+
+/**
+ * POST /api/playlists/:id/tracks — додавання треку до плейлиста (UC-4).
+ * @param {import('express').Request} req - params: `id`; тіло: `{trackId}`.
+ * @param {import('express').Response} res - 201 `{track}` (з датою додавання `added_at`).
+ * @returns {Promise<void>}
+ */
+export async function addTrack(req, res) {
+  const track = await playlistService.addTrack(req.user.id, req.params.id, req.body.trackId);
+  res.status(201).json({ track });
+}
+
+/**
+ * DELETE /api/playlists/:id/tracks/:trackId — вилучення треку з плейлиста (UC-11).
+ * @param {import('express').Request} req - params: `id`, `trackId`.
+ * @param {import('express').Response} res - 204 без тіла.
+ * @returns {Promise<void>}
+ */
+export async function removeTrack(req, res) {
+  await playlistService.removeTrack(req.user.id, req.params.id, req.params.trackId);
+  res.status(204).end();
+}

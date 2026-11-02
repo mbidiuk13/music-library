@@ -121,3 +121,40 @@ export async function listPlaylistTracks(playlistId) {
   );
   return rows;
 }
+
+/**
+ * Додає трек до плейлиста і повертає дані цього треку.
+ * @param {string} playlistId - UUID плейлиста (належність користувачу перевіряє сервіс).
+ * @param {string} trackId - UUID треку.
+ * @param {import('pg').Pool|import('pg').PoolClient} [db=pool] - пул або з'єднання транзакції.
+ * @returns {Promise<object>} публічні дані доданого треку з датою додавання `added_at`.
+ * @throws {Error} помилка PostgreSQL 23505, якщо трек уже є в плейлисті (PRIMARY KEY
+ *   (playlist_id, track_id)); 23503, якщо треку або плейлиста не існує.
+ */
+export async function insertPlaylistTrack(playlistId, trackId, db = pool) {
+  const { rows } = await db.query(
+    `WITH added AS (
+       INSERT INTO playlist_track (playlist_id, track_id) VALUES ($1, $2)
+       RETURNING track_id, added_at
+     )
+     SELECT ${TRACK_COLUMNS}, added.added_at
+     FROM added
+     JOIN track t ON t.id = added.track_id`,
+    [playlistId, trackId],
+  );
+  return rows[0];
+}
+
+/**
+ * Прибирає трек з плейлиста (сам трек лишається в медіатеці).
+ * @param {string} playlistId - UUID плейлиста (належність користувачу перевіряє сервіс).
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<boolean>} true, якщо трек прибрано; false, якщо його не було в плейлисті.
+ */
+export async function deletePlaylistTrack(playlistId, trackId) {
+  const { rowCount } = await query(
+    'DELETE FROM playlist_track WHERE playlist_id = $1 AND track_id = $2',
+    [playlistId, trackId],
+  );
+  return rowCount > 0;
+}

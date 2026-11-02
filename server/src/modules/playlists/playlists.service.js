@@ -42,6 +42,16 @@ function toAppError(err) {
   if (err.code === UNIQUE_VIOLATION && err.constraint === 'playlist_user_id_title_key') {
     return new AppError(409, 'PLAYLIST_TITLE_TAKEN', 'Плейлист з такою назвою вже існує');
   }
+  if (err.code === UNIQUE_VIOLATION && err.constraint === 'playlist_track_pkey') {
+    return new AppError(409, 'TRACK_ALREADY_IN_PLAYLIST', 'Трек уже є в плейлисті');
+  }
+  if (err.code === FOREIGN_KEY_VIOLATION && err.constraint === 'playlist_track_track_id_fkey') {
+    return new AppError(404, 'TRACK_NOT_FOUND', 'Трек не знайдено');
+  }
+  if (err.code === FOREIGN_KEY_VIOLATION && err.constraint === 'playlist_track_playlist_id_fkey') {
+    // Плейлист видалили паралельним запитом після перевірки належності.
+    return playlistNotFound();
+  }
   if (err.code === FOREIGN_KEY_VIOLATION && err.constraint === 'playlist_user_id_fkey') {
     // Токен ще дійсний, але обліковий запис уже видалено.
     return new AppError(
@@ -164,4 +174,38 @@ export async function deletePlaylist(userId, id) {
     throw favoritesProtected('Плейлист «Улюблені» не можна видалити');
   }
   if (!(await repository.deletePlaylist(id, userId))) throw playlistNotFound();
+}
+
+/**
+ * Додає трек до власного плейлиста (UC-4, FR-10). Той самий трек можна додати в різні
+ * плейлисти, але в один плейлист — лише один раз (PRIMARY KEY (playlist_id, track_id)).
+ * @param {string} userId - UUID користувача.
+ * @param {string} playlistId - UUID плейлиста.
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<object>} доданий трек із датою додавання.
+ * @throws {AppError} 404 PLAYLIST_NOT_FOUND; 404 TRACK_NOT_FOUND;
+ *   409 TRACK_ALREADY_IN_PLAYLIST — трек уже є в плейлисті.
+ */
+export async function addTrack(userId, playlistId, trackId) {
+  await requireOwnPlaylist(userId, playlistId);
+  try {
+    return await repository.insertPlaylistTrack(playlistId, trackId);
+  } catch (err) {
+    throw toAppError(err);
+  }
+}
+
+/**
+ * Прибирає трек з власного плейлиста (UC-11).
+ * @param {string} userId - UUID користувача.
+ * @param {string} playlistId - UUID плейлиста.
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<void>}
+ * @throws {AppError} 404 PLAYLIST_NOT_FOUND; 404 TRACK_NOT_IN_PLAYLIST — трека немає в плейлисті.
+ */
+export async function removeTrack(userId, playlistId, trackId) {
+  await requireOwnPlaylist(userId, playlistId);
+  if (!(await repository.deletePlaylistTrack(playlistId, trackId))) {
+    throw new AppError(404, 'TRACK_NOT_IN_PLAYLIST', 'Трека немає в плейлисті');
+  }
 }

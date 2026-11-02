@@ -34,6 +34,24 @@ const titleRule = () =>
 /** Правило для ідентифікатора плейлиста в шляху запиту. */
 const playlistIdRule = param('id').isUUID().withMessage('Некоректний ідентифікатор плейлиста');
 
+/** Повідомлення про некоректний ідентифікатор треку. */
+const TRACK_ID_MESSAGE = 'Некоректний ідентифікатор треку';
+
+/**
+ * Правило для ідентифікатора треку в тілі запиту (`trackId`).
+ * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
+ */
+const trackIdBodyRule = () =>
+  body('trackId')
+    .isString()
+    .withMessage(TRACK_ID_MESSAGE)
+    .bail()
+    .isUUID()
+    .withMessage(TRACK_ID_MESSAGE);
+
+/** Правило для ідентифікатора треку в шляху запиту. */
+const trackIdParamRule = param('trackId').isUUID().withMessage(TRACK_ID_MESSAGE);
+
 /** Маршрути плейлистів: `/api/playlists`. */
 export const playlistRouter = Router();
 
@@ -74,3 +92,27 @@ playlistRouter.patch(
  * @route DELETE /api/playlists/:id
  */
 playlistRouter.delete('/:id', playlistIdRule, validate, asyncHandler(controller.deletePlaylist));
+
+/**
+ * Додавання треку до плейлиста (UC-4). Повторне додавання — 409.
+ * @route POST /api/playlists/:id/tracks
+ */
+playlistRouter.post(
+  '/:id/tracks',
+  playlistIdRule,
+  trackIdBodyRule(),
+  validate,
+  asyncHandler(controller.addTrack),
+);
+
+/**
+ * Вилучення треку з плейлиста (UC-11).
+ * @route DELETE /api/playlists/:id/tracks/:trackId
+ */
+playlistRouter.delete(
+  '/:id/tracks/:trackId',
+  playlistIdRule,
+  trackIdParamRule,
+  validate,
+  asyncHandler(controller.removeTrack),
+);
