@@ -19,6 +19,7 @@
     "migrate:reset": "npm run migrate:reset --workspace server",
     "seed": "npm run seed --workspace server",
     "seed:admin": "npm run seed:admin --workspace server",
+    "import:tracks": "npm run import:tracks --workspace server",
     "test": "npm run test --workspace server",
     "lint": "eslint .",
     "format": "prettier --write .",

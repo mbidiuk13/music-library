@@ -15,6 +15,7 @@
     "migrate:reset": "node --env-file=../.env src/db/migrate.js --reset",
     "seed": "node --env-file=../.env src/db/seed.js",
     "seed:admin": "node --env-file=../.env src/db/seed-admin.js",
+    "import:tracks": "node --env-file=../.env scripts/import-tracks.js",
     "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "jest": {
