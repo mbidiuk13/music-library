@@ -7,6 +7,7 @@
  */
 
 import config from '../../config/index.js';
+import { transaction } from '../../db/pool.js';
 import AppError from '../../utils/AppError.js';
 import * as repository from './playlists.repository.js';
 
@@ -118,6 +119,28 @@ export async function createPlaylist(userId, title) {
   try {
     const playlist = await repository.insertPlaylist(userId, title);
     return toPlaylist({ ...playlist, track_count: 0 });
+  } catch (err) {
+    throw toAppError(err);
+  }
+}
+
+/**
+ * Створює новий плейлист і одразу додає до нього трек (сценарій BPMN рис. 1.4) в одній
+ * транзакції: якщо будь-який крок не вдався (дубль назви, трека не існує), виконується
+ * ROLLBACK і порожній плейлист не лишається в БД.
+ * @param {string} userId - UUID користувача.
+ * @param {string} title - назва 1–100 символів (уже обрізана).
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<{playlist: object, track: object}>} створений плейлист і доданий трек.
+ * @throws {AppError} 409 PLAYLIST_TITLE_TAKEN; 404 TRACK_NOT_FOUND; 401 INVALID_TOKEN.
+ */
+export async function createPlaylistWithTrack(userId, title, trackId) {
+  try {
+    return await transaction(async (client) => {
+      const playlist = await repository.insertPlaylist(userId, title, client);
+      const track = await repository.insertPlaylistTrack(playlist.id, trackId, client);
+      return { playlist: toPlaylist({ ...playlist, track_count: 1 }), track };
+    });
   } catch (err) {
     throw toAppError(err);
   }

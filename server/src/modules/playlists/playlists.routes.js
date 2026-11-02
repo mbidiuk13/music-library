@@ -70,6 +70,18 @@ playlistRouter.get('/', asyncHandler(controller.listPlaylists));
 playlistRouter.post('/', titleRule(), validate, asyncHandler(controller.createPlaylist));
 
 /**
+ * Створення плейлиста з першим треком в одній транзакції (BPMN рис. 1.4).
+ * @route POST /api/playlists/with-track
+ */
+playlistRouter.post(
+  '/with-track',
+  titleRule(),
+  trackIdBodyRule(),
+  validate,
+  asyncHandler(controller.createPlaylistWithTrack),
+);
+
+/**
  * Плейлист разом з треками.
  * @route GET /api/playlists/:id
  */

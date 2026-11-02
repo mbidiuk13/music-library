@@ -28,6 +28,17 @@ export async function createPlaylist(req, res) {
 }
 
 /**
+ * POST /api/playlists/with-track — новий плейлист з першим треком (BPMN рис. 1.4).
+ * @param {import('express').Request} req - тіло: `{title, trackId}`.
+ * @param {import('express').Response} res - 201 `{playlist, track}`.
+ * @returns {Promise<void>}
+ */
+export async function createPlaylistWithTrack(req, res) {
+  const { title, trackId } = req.body;
+  res.status(201).json(await playlistService.createPlaylistWithTrack(req.user.id, title, trackId));
+}
+
+/**
  * GET /api/playlists/:id — плейлист разом з треками.
  * @param {import('express').Request} req - params: `id`.
  * @param {import('express').Response} res - 200 `{playlist, tracks}`.

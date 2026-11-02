@@ -1,6 +1,7 @@
 /**
  * @file Інтеграційні тести вмісту плейлистів (UC-4, UC-11, FR-10): додавання треку, повторне
- * додавання, вилучення треку, доступ лише до власних плейлистів.
+ * додавання, вилучення треку, створення плейлиста з першим треком в одній транзакції,
+ * доступ лише до власних плейлистів.
  * Працюють з окремою тестовою БД (TEST_DATABASE_URL).
  */
 
@@ -9,7 +10,7 @@ import createApp from '../src/app.js';
 import { closePool } from '../src/db/pool.js';
 import { describeDb } from './helpers/db.js';
 import { insertTestTrack } from './helpers/media.js';
-import { createUser, trackIdsInDb } from './helpers/playlists.js';
+import { createUser, playlistsInDb, trackIdsInDb } from './helpers/playlists.js';
 
 const app = createApp();
 const UNKNOWN_ID = '00000000-0000-4000-8000-000000000000';
@@ -273,5 +274,77 @@ describeDb('DELETE /api/playlists/:id/tracks/:trackId', () => {
     expect(res.body.error.details).toEqual([
       { field: 'trackId', message: 'Некоректний ідентифікатор треку' },
     ]);
+  });
+});
+
+describeDb('POST /api/playlists/with-track', () => {
+  /**
+   * Надсилає запит на створення плейлиста з треком.
+   * @param {{auth: string}} user - користувач.
+   * @param {object} payload - тіло запиту.
+   * @returns {import('supertest').Test} запит.
+   */
+  const createWithTrack = (user, payload) =>
+    request(app).post('/api/playlists/with-track').set('Authorization', user.auth).send(payload);
+
+  test('201: створює плейлист і додає до нього трек', async () => {
+    const user = await createUser();
+    const track = await insertTestTrack();
+
+    const res = await createWithTrack(user, { title: ' Новий з треком ', trackId: track.id });
+
+    expect(res.status).toBe(201);
+    expect(res.body.playlist).toEqual({
+      id: expect.any(String),
+      title: 'Новий з треком',
+      created_at: expect.any(String),
+      track_count: 1,
+      is_favorites: false,
+    });
+    expect(res.body.track).toMatchObject({ id: track.id, added_at: expect.any(String) });
+    expect(await trackIdsInDb(res.body.playlist.id)).toEqual([track.id]);
+  });
+
+  test('404 і ROLLBACK: трека не існує — порожній плейлист не створюється', async () => {
+    const user = await createUser();
+
+    const res = await createWithTrack(user, { title: 'Не має з’явитися', trackId: UNKNOWN_ID });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('TRACK_NOT_FOUND');
+    expect(await playlistsInDb(user.id)).toEqual([{ id: user.favoritesId, title: 'Улюблені' }]);
+  });
+
+  test('409: дубль назви — нічого не створюється і не додається', async () => {
+    const user = await createUser();
+    const existing = await createPlaylist(user, 'Вже є');
+    const track = await insertTestTrack();
+
+    const res = await createWithTrack(user, { title: 'Вже є', trackId: track.id });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('PLAYLIST_TITLE_TAKEN');
+    expect(await playlistsInDb(user.id)).toHaveLength(2);
+    expect(await trackIdsInDb(existing.id)).toEqual([]);
+  });
+
+  test('400: перевіряються і назва, і трек', async () => {
+    const user = await createUser();
+
+    const res = await createWithTrack(user, { title: '', trackId: 'abc' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.details).toEqual([
+      { field: 'title', message: 'Введіть назву плейлиста' },
+      { field: 'trackId', message: 'Некоректний ідентифікатор треку' },
+    ]);
+  });
+
+  test('401: без токена', async () => {
+    const res = await request(app)
+      .post('/api/playlists/with-track')
+      .send({ title: 'Гість', trackId: UNKNOWN_ID });
+
+    expect(res.status).toBe(401);
   });
 });
