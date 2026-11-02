@@ -25,6 +25,15 @@ function playlistNotFound() {
 }
 
 /**
+ * Створює помилку «дія з плейлистом «Улюблені» заборонена».
+ * @param {string} message - яку саме дію заборонено.
+ * @returns {AppError} 403 FAVORITES_PROTECTED.
+ */
+function favoritesProtected(message) {
+  return new AppError(403, 'FAVORITES_PROTECTED', message);
+}
+
+/**
  * Перетворює порушення обмежень БД на зрозумілу клієнту помилку.
  * @param {Error & {code?: string, constraint?: string}} err - помилка PostgreSQL.
  * @returns {Error} AppError для відомих порушень, інакше — сама помилка без змін.
@@ -115,4 +124,44 @@ export async function getPlaylist(userId, id) {
   const playlist = await requireOwnPlaylist(userId, id);
   const tracks = await repository.listPlaylistTracks(id);
   return { playlist: toPlaylist(playlist), tracks };
+}
+
+/**
+ * Перейменовує плейлист (UC-11). «Улюблені» перейменувати не можна.
+ * @param {string} userId - UUID користувача.
+ * @param {string} id - UUID плейлиста.
+ * @param {string} title - нова назва 1–100 символів (уже обрізана).
+ * @returns {Promise<object>} оновлений плейлист.
+ * @throws {AppError} 404 PLAYLIST_NOT_FOUND; 403 FAVORITES_PROTECTED;
+ *   409 PLAYLIST_TITLE_TAKEN — у користувача вже є інший плейлист з такою назвою.
+ */
+export async function renamePlaylist(userId, id, title) {
+  const playlist = await requireOwnPlaylist(userId, id);
+  if (isFavorites(playlist)) {
+    throw favoritesProtected('Плейлист «Улюблені» не можна перейменувати');
+  }
+
+  let renamed;
+  try {
+    renamed = await repository.renamePlaylist(id, userId, title);
+  } catch (err) {
+    throw toAppError(err);
+  }
+  if (!renamed) throw playlistNotFound();
+  return toPlaylist({ ...renamed, track_count: playlist.track_count });
+}
+
+/**
+ * Видаляє плейлист (UC-11); треки лишаються в медіатеці. «Улюблені» видалити не можна.
+ * @param {string} userId - UUID користувача.
+ * @param {string} id - UUID плейлиста.
+ * @returns {Promise<void>}
+ * @throws {AppError} 404 PLAYLIST_NOT_FOUND; 403 FAVORITES_PROTECTED.
+ */
+export async function deletePlaylist(userId, id) {
+  const playlist = await requireOwnPlaylist(userId, id);
+  if (isFavorites(playlist)) {
+    throw favoritesProtected('Плейлист «Улюблені» не можна видалити');
+  }
+  if (!(await repository.deletePlaylist(id, userId))) throw playlistNotFound();
 }

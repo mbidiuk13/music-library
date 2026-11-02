@@ -56,3 +56,21 @@ playlistRouter.post('/', titleRule(), validate, asyncHandler(controller.createPl
  * @route GET /api/playlists/:id
  */
 playlistRouter.get('/:id', playlistIdRule, validate, asyncHandler(controller.getPlaylist));
+
+/**
+ * Перейменування плейлиста (UC-11).
+ * @route PATCH /api/playlists/:id
+ */
+playlistRouter.patch(
+  '/:id',
+  playlistIdRule,
+  titleRule(),
+  validate,
+  asyncHandler(controller.renamePlaylist),
+);
+
+/**
+ * Видалення плейлиста (UC-11).
+ * @route DELETE /api/playlists/:id
+ */
+playlistRouter.delete('/:id', playlistIdRule, validate, asyncHandler(controller.deletePlaylist));

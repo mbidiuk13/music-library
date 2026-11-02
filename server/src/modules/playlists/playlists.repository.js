@@ -72,6 +72,40 @@ export async function insertPlaylist(userId, title, db = pool) {
 }
 
 /**
+ * Перейменовує плейлист користувача.
+ * @param {string} id - UUID плейлиста.
+ * @param {string} userId - UUID власника.
+ * @param {string} title - нова назва (уже перевірена й обрізана).
+ * @returns {Promise<{id: string, title: string, created_at: Date}|undefined>} оновлений плейлист
+ *   або undefined, якщо плейлиста немає чи він чужий.
+ * @throws {Error} помилка PostgreSQL 23505, якщо в користувача вже є плейлист з такою назвою.
+ */
+export async function renamePlaylist(id, userId, title) {
+  const { rows } = await query(
+    `UPDATE playlist SET title = $3
+     WHERE id = $1 AND user_id = $2
+     RETURNING id, title, created_at`,
+    [id, userId, title],
+  );
+  return rows[0];
+}
+
+/**
+ * Видаляє плейлист користувача; його записи в playlist_track видаляються каскадно
+ * (ON DELETE CASCADE), самі треки лишаються в медіатеці.
+ * @param {string} id - UUID плейлиста.
+ * @param {string} userId - UUID власника.
+ * @returns {Promise<boolean>} true, якщо плейлист видалено; false, якщо його немає чи він чужий.
+ */
+export async function deletePlaylist(id, userId) {
+  const { rowCount } = await query('DELETE FROM playlist WHERE id = $1 AND user_id = $2', [
+    id,
+    userId,
+  ]);
+  return rowCount > 0;
+}
+
+/**
  * Повертає треки плейлиста в порядку додавання.
  * @param {string} playlistId - UUID плейлиста (належність користувачу перевіряє сервіс).
  * @returns {Promise<object[]>} публічні дані треків із датою додавання `added_at`.

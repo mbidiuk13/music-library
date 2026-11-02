@@ -36,3 +36,25 @@ export async function createPlaylist(req, res) {
 export async function getPlaylist(req, res) {
   res.json(await playlistService.getPlaylist(req.user.id, req.params.id));
 }
+
+/**
+ * PATCH /api/playlists/:id — перейменування плейлиста (UC-11).
+ * @param {import('express').Request} req - params: `id`; тіло: `{title}`.
+ * @param {import('express').Response} res - 200 `{playlist}`.
+ * @returns {Promise<void>}
+ */
+export async function renamePlaylist(req, res) {
+  const playlist = await playlistService.renamePlaylist(req.user.id, req.params.id, req.body.title);
+  res.json({ playlist });
+}
+
+/**
+ * DELETE /api/playlists/:id — видалення плейлиста (UC-11).
+ * @param {import('express').Request} req - params: `id`.
+ * @param {import('express').Response} res - 204 без тіла.
+ * @returns {Promise<void>}
+ */
+export async function deletePlaylist(req, res) {
+  await playlistService.deletePlaylist(req.user.id, req.params.id);
+  res.status(204).end();
+}

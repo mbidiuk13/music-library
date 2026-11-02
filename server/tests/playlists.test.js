@@ -8,6 +8,7 @@ import request from 'supertest';
 import createApp from '../src/app.js';
 import { closePool, query } from '../src/db/pool.js';
 import { describeDb } from './helpers/db.js';
+import { insertTestTrack } from './helpers/media.js';
 import { createUser, playlistsInDb } from './helpers/playlists.js';
 
 const app = createApp();
@@ -35,6 +36,8 @@ describe('Playlist Service без токена', () => {
     ['get', '/api/playlists'],
     ['post', '/api/playlists'],
     ['get', `/api/playlists/${UNKNOWN_ID}`],
+    ['patch', `/api/playlists/${UNKNOWN_ID}`],
+    ['delete', `/api/playlists/${UNKNOWN_ID}`],
   ])('%s %s → 401', async (method, path) => {
     const res = await request(app)[method](path).send({ title: 'Плейлист' });
 
@@ -234,5 +237,170 @@ describeDb('GET /api/playlists/:id', () => {
     expect(res.body.error.details).toEqual([
       { field: 'id', message: 'Некоректний ідентифікатор плейлиста' },
     ]);
+  });
+});
+
+describeDb('PATCH /api/playlists/:id', () => {
+  /**
+   * Надсилає запит на перейменування.
+   * @param {{auth: string}} user - користувач.
+   * @param {string} id - UUID плейлиста.
+   * @param {object} payload - тіло запиту.
+   * @returns {import('supertest').Test} запит.
+   */
+  const rename = (user, id, payload) =>
+    request(app).patch(`/api/playlists/${id}`).set('Authorization', user.auth).send(payload);
+
+  test('200: перейменовує власний плейлист, назва обрізається', async () => {
+    const user = await createUser();
+    const playlist = await createPlaylist(user, 'Стара назва');
+
+    const res = await rename(user, playlist.id, { title: '  Нова назва ' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.playlist).toEqual({ ...playlist, title: 'Нова назва' });
+    expect(await playlistsInDb(user.id)).toContainEqual({ id: playlist.id, title: 'Нова назва' });
+  });
+
+  test('200: та сама назва — не дубль', async () => {
+    const user = await createUser();
+    const playlist = await createPlaylist(user, 'Без змін');
+
+    const res = await rename(user, playlist.id, { title: 'Без змін' });
+
+    expect(res.status).toBe(200);
+  });
+
+  test('409: назва іншого власного плейлиста', async () => {
+    const user = await createUser();
+    await createPlaylist(user, 'Перший');
+    const second = await createPlaylist(user, 'Другий');
+
+    const res = await rename(user, second.id, { title: 'Перший' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('PLAYLIST_TITLE_TAKEN');
+    expect(await playlistsInDb(user.id)).toContainEqual({ id: second.id, title: 'Другий' });
+  });
+
+  test('409: перейменувати плейлист на «Улюблені» не можна', async () => {
+    const user = await createUser();
+    const playlist = await createPlaylist(user, 'Звичайний');
+
+    const res = await rename(user, playlist.id, { title: 'Улюблені' });
+
+    expect(res.status).toBe(409);
+  });
+
+  test('403: «Улюблені» перейменувати не можна', async () => {
+    const user = await createUser();
+
+    const res = await rename(user, user.favoritesId, { title: 'Моє' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toEqual({
+      code: 'FAVORITES_PROTECTED',
+      message: 'Плейлист «Улюблені» не можна перейменувати',
+    });
+    expect(await playlistsInDb(user.id)).toEqual([{ id: user.favoritesId, title: 'Улюблені' }]);
+  });
+
+  test('404: чужий плейлист не перейменовується', async () => {
+    const owner = await createUser();
+    const stranger = await createUser();
+    const playlist = await createPlaylist(owner, 'Мій');
+
+    const res = await rename(stranger, playlist.id, { title: 'Захоплений' });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('PLAYLIST_NOT_FOUND');
+    expect(await playlistsInDb(owner.id)).toContainEqual({ id: playlist.id, title: 'Мій' });
+  });
+
+  test('404: чужі «Улюблені» — 404, а не 403 (не розкриваємо чужий плейлист)', async () => {
+    const owner = await createUser();
+    const stranger = await createUser();
+
+    const res = await rename(stranger, owner.favoritesId, { title: 'Захоплений' });
+
+    expect(res.status).toBe(404);
+  });
+
+  test('400: порожня назва', async () => {
+    const user = await createUser();
+    const playlist = await createPlaylist(user, 'Назва');
+
+    const res = await rename(user, playlist.id, { title: ' ' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.details).toEqual([
+      { field: 'title', message: 'Введіть назву плейлиста' },
+    ]);
+  });
+});
+
+describeDb('DELETE /api/playlists/:id', () => {
+  test('204: видаляє плейлист і його вміст, треки лишаються в медіатеці', async () => {
+    const user = await createUser();
+    const playlist = await createPlaylist(user, 'Тимчасовий');
+    const track = await insertTestTrack();
+    await query('INSERT INTO playlist_track (playlist_id, track_id) VALUES ($1, $2)', [
+      playlist.id,
+      track.id,
+    ]);
+
+    const res = await request(app)
+      .delete(`/api/playlists/${playlist.id}`)
+      .set('Authorization', user.auth);
+
+    expect(res.status).toBe(204);
+    expect(await playlistsInDb(user.id)).toEqual([{ id: user.favoritesId, title: 'Улюблені' }]);
+    const links = await query('SELECT 1 FROM playlist_track WHERE playlist_id = $1', [playlist.id]);
+    expect(links.rowCount).toBe(0);
+    const tracks = await query('SELECT 1 FROM track WHERE id = $1', [track.id]);
+    expect(tracks.rowCount).toBe(1);
+
+    const again = await request(app)
+      .get(`/api/playlists/${playlist.id}`)
+      .set('Authorization', user.auth);
+    expect(again.status).toBe(404);
+  });
+
+  test('403: «Улюблені» видалити не можна', async () => {
+    const user = await createUser();
+
+    const res = await request(app)
+      .delete(`/api/playlists/${user.favoritesId}`)
+      .set('Authorization', user.auth);
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toEqual({
+      code: 'FAVORITES_PROTECTED',
+      message: 'Плейлист «Улюблені» не можна видалити',
+    });
+    expect(await playlistsInDb(user.id)).toHaveLength(1);
+  });
+
+  test('404: чужий плейлист не видаляється', async () => {
+    const owner = await createUser();
+    const stranger = await createUser();
+    const playlist = await createPlaylist(owner, 'Не чіпати');
+
+    const res = await request(app)
+      .delete(`/api/playlists/${playlist.id}`)
+      .set('Authorization', stranger.auth);
+
+    expect(res.status).toBe(404);
+    expect(await playlistsInDb(owner.id)).toContainEqual({ id: playlist.id, title: 'Не чіпати' });
+  });
+
+  test('404: плейлиста не існує', async () => {
+    const user = await createUser();
+
+    const res = await request(app)
+      .delete(`/api/playlists/${UNKNOWN_ID}`)
+      .set('Authorization', user.auth);
+
+    expect(res.status).toBe(404);
   });
 });
