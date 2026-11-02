@@ -4,7 +4,7 @@
  */
 
 import { jest } from '@jest/globals';
-import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import s3, { getS3Client } from '../src/services/s3.js';
 
 /**
@@ -44,6 +44,36 @@ describe('services/s3', () => {
     const command = send.mock.calls[0][0];
     expect(command).toBeInstanceOf(DeleteObjectCommand);
     expect(command.input).toEqual({ Bucket: 'test-bucket', Key: 'tracks/test.mp3' });
+  });
+
+  test("fileExists: HeadObject з потрібним ключем, true для наявного об'єкта", async () => {
+    const send = mockSend();
+
+    await expect(s3.fileExists('tracks/test.mp3')).resolves.toBe(true);
+
+    const command = send.mock.calls[0][0];
+    expect(command).toBeInstanceOf(HeadObjectCommand);
+    expect(command.input).toEqual({ Bucket: 'test-bucket', Key: 'tracks/test.mp3' });
+  });
+
+  test('fileExists: false, якщо S3 відповів 404', async () => {
+    const notFound = Object.assign(new Error('NotFound'), {
+      name: 'NotFound',
+      $metadata: { httpStatusCode: 404 },
+    });
+    jest.spyOn(getS3Client(), 'send').mockRejectedValue(notFound);
+
+    await expect(s3.fileExists('tracks/absent.mp3')).resolves.toBe(false);
+  });
+
+  test('fileExists: інші помилки AWS (напр. 403) передаються далі', async () => {
+    const forbidden = Object.assign(new Error('Forbidden'), {
+      name: 'Forbidden',
+      $metadata: { httpStatusCode: 403 },
+    });
+    jest.spyOn(getS3Client(), 'send').mockRejectedValue(forbidden);
+
+    await expect(s3.fileExists('tracks/test.mp3')).rejects.toThrow('Forbidden');
   });
 
   test('getPresignedUrl: підписане посилання на 3600 с без запиту до AWS', async () => {

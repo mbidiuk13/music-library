@@ -7,7 +7,12 @@
  * зі змінних середовища AWS_ACCESS_KEY_ID і AWS_SECRET_ACCESS_KEY.
  */
 
-import { DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import config from '../config/index.js';
@@ -63,6 +68,23 @@ async function deleteFile(key) {
 }
 
 /**
+ * Перевіряє, чи є об'єкт із заданим ключем у бакеті (запит HeadObject, без завантаження вмісту).
+ * Відповідь 404 на відсутній ключ S3 дає лише за наявності права s3:ListBucket (без нього — 403).
+ * @param {string} key - ключ об'єкта.
+ * @returns {Promise<boolean>} true, якщо об'єкт існує; false, якщо S3 відповів 404.
+ * @throws {Error} інша помилка AWS (немає доступу, бакет не існує, збій мережі).
+ */
+async function fileExists(key) {
+  try {
+    await getS3Client().send(new HeadObjectCommand({ Bucket: getBucket(), Key: key }));
+    return true;
+  } catch (err) {
+    if (err.name === 'NotFound' || err.$metadata?.httpStatusCode === 404) return false;
+    throw err;
+  }
+}
+
+/**
  * Створює тимчасове посилання (pre-signed URL) на читання об'єкта. Підпис обчислюється
  * локально ключем IAM-користувача, запиту до AWS при цьому немає.
  * @param {string} key - ключ об'єкта.
@@ -75,6 +97,6 @@ async function getPresignedUrl(key, expiresIn = config.s3.presignTtl) {
 }
 
 /** Сервіс S3 (об'єкт, щоб у тестах можна було підмінити звернення до AWS). */
-const s3 = { uploadFile, deleteFile, getPresignedUrl };
+const s3 = { uploadFile, deleteFile, fileExists, getPresignedUrl };
 
 export default s3;
