@@ -91,3 +91,35 @@ export async function removeTrack(req, res) {
   await playlistService.removeTrack(req.user.id, req.params.id, req.params.trackId);
   res.status(204).end();
 }
+
+/**
+ * GET /api/favorites/ids — ідентифікатори улюблених треків.
+ * @param {import('express').Request} req - HTTP-запит авторизованого користувача.
+ * @param {import('express').Response} res - 200 `{ids}`.
+ * @returns {Promise<void>}
+ */
+export async function listFavoriteIds(req, res) {
+  res.json({ ids: await playlistService.listFavoriteIds(req.user.id) });
+}
+
+/**
+ * POST /api/favorites/:trackId — додати трек до «Улюблених».
+ * @param {import('express').Request} req - params: `trackId`.
+ * @param {import('express').Response} res - 201 `{track}`.
+ * @returns {Promise<void>}
+ */
+export async function addFavorite(req, res) {
+  const track = await playlistService.addFavorite(req.user.id, req.params.trackId);
+  res.status(201).json({ track });
+}
+
+/**
+ * DELETE /api/favorites/:trackId — прибрати трек з «Улюблених».
+ * @param {import('express').Request} req - params: `trackId`.
+ * @param {import('express').Response} res - 204 без тіла.
+ * @returns {Promise<void>}
+ */
+export async function removeFavorite(req, res) {
+  await playlistService.removeFavorite(req.user.id, req.params.trackId);
+  res.status(204).end();
+}

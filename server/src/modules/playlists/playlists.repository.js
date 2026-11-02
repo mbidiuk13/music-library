@@ -158,3 +158,35 @@ export async function deletePlaylistTrack(playlistId, trackId) {
   );
   return rowCount > 0;
 }
+
+/**
+ * Шукає плейлист користувача за точною назвою (використовується для «Улюблених»).
+ * @param {string} userId - UUID власника.
+ * @param {string} title - назва плейлиста.
+ * @returns {Promise<string|undefined>} UUID плейлиста або undefined.
+ */
+export async function findPlaylistIdByTitle(userId, title) {
+  const { rows } = await query('SELECT id FROM playlist WHERE user_id = $1 AND title = $2', [
+    userId,
+    title,
+  ]);
+  return rows[0]?.id;
+}
+
+/**
+ * Повертає ідентифікатори треків плейлиста користувача з указаною назвою.
+ * @param {string} userId - UUID власника.
+ * @param {string} title - назва плейлиста.
+ * @returns {Promise<string[]>} UUID треків у порядку додавання (порожній масив, якщо плейлиста немає).
+ */
+export async function listTrackIdsByPlaylistTitle(userId, title) {
+  const { rows } = await query(
+    `SELECT pt.track_id
+     FROM playlist_track pt
+     JOIN playlist p ON p.id = pt.playlist_id
+     WHERE p.user_id = $1 AND p.title = $2
+     ORDER BY pt.added_at, pt.track_id`,
+    [userId, title],
+  );
+  return rows.map((row) => row.track_id);
+}

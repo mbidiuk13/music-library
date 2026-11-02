@@ -1,6 +1,7 @@
 /**
  * @module modules/playlists/playlists.routes
- * @description Маршрути Playlist Service і серверні правила валідації. Усі маршрути — лише для
+ * @description Маршрути Playlist Service (`/api/playlists`, шорткати «Улюблених» `/api/favorites`)
+ * і серверні правила валідації. Усі маршрути — лише для
  * авторизованих користувачів (authenticate). Ті самі правила валідації назви плейлиста
  * дублюються на клієнті (форма «Новий плейлист»).
  */
@@ -127,4 +128,32 @@ playlistRouter.delete(
   trackIdParamRule,
   validate,
   asyncHandler(controller.removeTrack),
+);
+
+/** Шорткати для «сердечка» (працюють з плейлистом «Улюблені»): `/api/favorites`. */
+export const favoritesRouter = Router();
+
+favoritesRouter.use(authenticate);
+
+/**
+ * Ідентифікатори улюблених треків.
+ * @route GET /api/favorites/ids
+ */
+favoritesRouter.get('/ids', asyncHandler(controller.listFavoriteIds));
+
+/**
+ * Додати трек до «Улюблених».
+ * @route POST /api/favorites/:trackId
+ */
+favoritesRouter.post('/:trackId', trackIdParamRule, validate, asyncHandler(controller.addFavorite));
+
+/**
+ * Прибрати трек з «Улюблених».
+ * @route DELETE /api/favorites/:trackId
+ */
+favoritesRouter.delete(
+  '/:trackId',
+  trackIdParamRule,
+  validate,
+  asyncHandler(controller.removeFavorite),
 );

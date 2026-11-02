@@ -211,6 +211,17 @@ export async function deletePlaylist(userId, id) {
  */
 export async function addTrack(userId, playlistId, trackId) {
   await requireOwnPlaylist(userId, playlistId);
+  return insertTrack(playlistId, trackId);
+}
+
+/**
+ * Додає трек до плейлиста, належність якого вже перевірено.
+ * @param {string} playlistId - UUID плейлиста.
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<object>} доданий трек із датою додавання.
+ * @throws {AppError} 404 TRACK_NOT_FOUND; 409 TRACK_ALREADY_IN_PLAYLIST.
+ */
+async function insertTrack(playlistId, trackId) {
   try {
     return await repository.insertPlaylistTrack(playlistId, trackId);
   } catch (err) {
@@ -228,7 +239,61 @@ export async function addTrack(userId, playlistId, trackId) {
  */
 export async function removeTrack(userId, playlistId, trackId) {
   await requireOwnPlaylist(userId, playlistId);
+  await deleteTrack(playlistId, trackId);
+}
+
+/**
+ * Прибирає трек з плейлиста, належність якого вже перевірено.
+ * @param {string} playlistId - UUID плейлиста.
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<void>}
+ * @throws {AppError} 404 TRACK_NOT_IN_PLAYLIST.
+ */
+async function deleteTrack(playlistId, trackId) {
   if (!(await repository.deletePlaylistTrack(playlistId, trackId))) {
     throw new AppError(404, 'TRACK_NOT_IN_PLAYLIST', 'Трека немає в плейлисті');
   }
+}
+
+/**
+ * Повертає ідентифікатор плейлиста «Улюблені» користувача.
+ * @param {string} userId - UUID користувача.
+ * @returns {Promise<string>} UUID плейлиста «Улюблені».
+ * @throws {AppError} 404 PLAYLIST_NOT_FOUND, якщо «Улюблених» немає (обліковий запис видалено).
+ */
+async function requireFavoritesId(userId) {
+  const id = await repository.findPlaylistIdByTitle(userId, config.favoritesTitle);
+  if (!id) throw new AppError(404, 'PLAYLIST_NOT_FOUND', 'Плейлист «Улюблені» не знайдено');
+  return id;
+}
+
+/**
+ * Повертає ідентифікатори треків з «Улюблених» (клієнт зафарбовує за ними «сердечка»).
+ * @param {string} userId - UUID користувача.
+ * @returns {Promise<string[]>} UUID треків у порядку додавання.
+ */
+export async function listFavoriteIds(userId) {
+  return repository.listTrackIdsByPlaylistTitle(userId, config.favoritesTitle);
+}
+
+/**
+ * Додає трек до «Улюблених» («сердечко» в списках треків і в плеєрі).
+ * @param {string} userId - UUID користувача.
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<object>} доданий трек із датою додавання.
+ * @throws {AppError} 404 PLAYLIST_NOT_FOUND; 404 TRACK_NOT_FOUND; 409 TRACK_ALREADY_IN_PLAYLIST.
+ */
+export async function addFavorite(userId, trackId) {
+  return insertTrack(await requireFavoritesId(userId), trackId);
+}
+
+/**
+ * Прибирає трек з «Улюблених».
+ * @param {string} userId - UUID користувача.
+ * @param {string} trackId - UUID треку.
+ * @returns {Promise<void>}
+ * @throws {AppError} 404 PLAYLIST_NOT_FOUND; 404 TRACK_NOT_IN_PLAYLIST.
+ */
+export async function removeFavorite(userId, trackId) {
+  await deleteTrack(await requireFavoritesId(userId), trackId);
 }
