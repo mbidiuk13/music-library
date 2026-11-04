@@ -1,0 +1,278 @@
+/* Каркас: бічне меню, область контенту, сторінки автентифікації, заготовки сторінок. */
+
+/* ---------- Основний каркас ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    'sidebar content'
+    'player player';
+  height: 100vh;
+  height: 100dvh;
+}
+
+.layout__content {
+  grid-area: content;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+/* ---------- Бічне меню ---------- */
+.sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
+  overflow-y: auto;
+  background: var(--bg-side);
+  border-right: 1px solid var(--border);
+}
+
+.sidebar__logo {
+  padding: 0 8px;
+  text-decoration: none;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--accent-grad);
+}
+
+.logo__name {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.nav__link:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.nav__link--active,
+.nav__link--active:hover {
+  color: var(--active-text);
+  background: var(--active-bg);
+  border-color: var(--active-border);
+}
+
+.sidebar__account {
+  margin-top: auto;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.account--guest {
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+}
+
+.account__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.account__avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  font-weight: 800;
+}
+
+.account__info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.account__name {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account__role {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.icon-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.icon-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ---------- Сторінки входу й реєстрації ---------- */
+.auth-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 100%;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.auth-layout__logo {
+  text-decoration: none;
+}
+
+.auth-layout__card {
+  width: min(100%, 420px);
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.auth-layout__card .page {
+  padding: 0;
+}
+
+/* ---------- Сторінки ---------- */
+.page {
+  padding: 32px;
+}
+
+.page--centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  text-align: center;
+}
+
+.page__title {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.page__muted {
+  margin: 0 0 24px;
+  color: var(--muted);
+}
+
+.page__code {
+  margin: 0;
+  font-size: 4.5rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.page-loader {
+  margin: 0;
+  padding: 32px;
+  color: var(--muted);
+}
+
+/* ---------- Вузькі екрани (детальна адаптивність — етап 9) ---------- */
+@media (max-width: 767px) {
+  .layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto;
+    grid-template-areas:
+      'content'
+      'player'
+      'sidebar';
+  }
+
+  .sidebar {
+    flex-direction: row;
+    padding: 8px;
+    border-top: 1px solid var(--border);
+    border-right: 0;
+  }
+
+  .sidebar__logo,
+  .sidebar__account {
+    display: none;
+  }
+
+  .nav {
+    flex: 1;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+
+  .nav__link {
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+
+  .page {
+    padding: 20px 16px;
+  }
+}
