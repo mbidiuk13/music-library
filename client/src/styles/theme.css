@@ -1,0 +1,45 @@
+/*
+ * Гама «Захід сонця» (розділ «Дизайн» SPEC, макети рис. 4.1–4.5 ТЗ).
+ * Усі кольори інтерфейсу задаються лише тут, через CSS-змінні.
+ * Бірюзові й зелені відтінки свідомо не використовуються.
+ */
+
+:root {
+  /* Тло */
+  --bg: linear-gradient(160deg, #171327, #0d0a18);
+  --bg-side: #0a0814;
+  --bg-player: #080611;
+
+  /* Поверхні й обводки */
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-hover: rgba(255, 255, 255, 0.06);
+  --border: #2a2342;
+
+  /* Текст */
+  --text: #ffffff;
+  --muted: #a7a1c0;
+
+  /* Акценти */
+  --accent-1: #ff7a59;
+  --accent-2: #c04cfd;
+  --accent-grad: linear-gradient(90deg, #ff7a59, #c04cfd);
+  --danger: #ff8fa3;
+
+  /* Активний пункт меню і другорядні кнопки */
+  --active-bg: rgba(255, 122, 89, 0.1);
+  --active-border: rgba(255, 122, 89, 0.4);
+  --active-text: #ff9b7f;
+
+  /* Кнопка Play у плеєрі — біла з темною іконкою */
+  --play-bg: #ffffff;
+  --play-icon: #0d0a18;
+
+  /* Розміри й шрифт */
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --sidebar-width: 240px;
+  --player-height: 84px;
+  --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: dark;
+}
