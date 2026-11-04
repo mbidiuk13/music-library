@@ -1,0 +1,237 @@
+/* Нижня панель плеєра і повзунки (прогрес, гучність). */
+
+.player {
+  grid-area: player;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  min-height: var(--player-height);
+  padding: 12px 20px;
+  background: var(--bg-player);
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- Трек ---------- */
+.player__track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.player__cover {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+}
+
+.player__cover--empty {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.player__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.player__title,
+.player__artist,
+.player__error {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player__title {
+  font-weight: 700;
+}
+
+.player__artist,
+.player__hint {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.player__error {
+  color: var(--danger);
+  font-size: 0.875rem;
+}
+
+.favorite--active,
+.favorite--active:hover:not(:disabled) {
+  color: var(--accent-1);
+}
+
+.favorite:disabled {
+  opacity: 1;
+}
+
+/* ---------- Керування ---------- */
+.player__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.player__controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.player__play {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--play-bg);
+  color: var(--play-icon);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.player__play:hover:not(:disabled) {
+  transform: scale(1.06);
+}
+
+.player__play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.player__play--loading {
+  animation: player-pulse 1s ease-in-out infinite;
+}
+
+@keyframes player-pulse {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.player__progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.player__time {
+  flex: none;
+  min-width: 40px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.player__volume {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.player__volume .range {
+  width: 110px;
+}
+
+/* ---------- Повзунок: заповнена частина — градієнт, порожня — колір обводки ---------- */
+.range {
+  --fill: 0%;
+  flex: 1;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+
+.range:disabled {
+  cursor: default;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background:
+    var(--accent-grad) 0 / var(--fill) 100% no-repeat,
+    var(--border);
+}
+
+.range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.range::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent-grad);
+}
+
+.range::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+  opacity: 0;
+  appearance: none;
+  transition: opacity 0.15s;
+}
+
+.range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.range:hover:not(:disabled)::-webkit-slider-thumb,
+.range:focus-visible::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.range:hover:not(:disabled)::-moz-range-thumb,
+.range:focus-visible::-moz-range-thumb {
+  opacity: 1;
+}
+
+/* ---------- Вузькі екрани: спрощений плеєр (детально — етап 9) ---------- */
+@media (max-width: 767px) {
+  .player {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 8px 12px;
+  }
+
+  .player__cover {
+    width: 40px;
+    height: 40px;
+  }
+
+  .player__progress,
+  .player__volume,
+  .player__controls .icon-button {
+    display: none;
+  }
+}

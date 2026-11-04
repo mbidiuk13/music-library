@@ -5,6 +5,7 @@
  */
 
 import { Outlet } from 'react-router-dom';
+import PlayerBar from './PlayerBar.jsx';
 import Sidebar from './Sidebar.jsx';
 
 /**
@@ -18,6 +19,7 @@ export default function Layout() {
       <main className="layout__content">
         <Outlet />
       </main>
+      <PlayerBar />
     </div>
   );
 }
