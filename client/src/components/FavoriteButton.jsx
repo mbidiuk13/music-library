@@ -1,12 +1,12 @@
 /**
  * @module components/FavoriteButton
  * @description Кнопка-сердечко: додає трек до плейлиста «Улюблені» або прибирає з нього.
- * Показується лише авторизованим користувачам.
+ * Стан береться зі спільного FavoritesContext. Показується лише авторизованим користувачам.
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addFavorite, fetchFavoriteIds, removeFavorite } from '../api/favorites.js';
+import { useFavorites } from '../context/FavoritesContext.jsx';
 import Icon from './Icon.jsx';
 
 /**
@@ -17,51 +17,35 @@ import Icon from './Icon.jsx';
  */
 export default function FavoriteButton({ trackId }) {
   const { t } = useTranslation();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [isBusy, setIsBusy] = useState(false);
-
-  // З'ясовуємо, чи трек уже в «Улюблених». Для іншого треку батьківський компонент
-  // перемонтовує кнопку (key={trackId}), тож стан починається з false.
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchFavoriteIds(controller.signal)
-      .then(({ ids }) => setIsFavorite(ids.includes(trackId)))
-      .catch(() => {});
-    return () => controller.abort();
-  }, [trackId]);
+  const active = isFavorite(trackId);
 
   /**
-   * Перемикає стан «улюблений» (оптимістично; у разі помилки повертає попередній стан).
-   * 409 під час додавання і 404 під час видалення означають, що стан уже потрібний.
+   * Перемикає стан «улюблений»; поки запит виконується, кнопка неактивна.
    * @returns {Promise<void>}
    */
   const handleClick = async () => {
-    const nextValue = !isFavorite;
-    setIsFavorite(nextValue);
     setIsBusy(true);
     try {
-      if (nextValue) await addFavorite(trackId);
-      else await removeFavorite(trackId);
-    } catch (err) {
-      const alreadyDone = nextValue ? err.status === 409 : err.status === 404;
-      if (!alreadyDone) setIsFavorite(!nextValue);
+      await toggleFavorite(trackId);
     } finally {
       setIsBusy(false);
     }
   };
 
-  const label = t(isFavorite ? 'player.removeFavorite' : 'player.addFavorite');
+  const label = t(active ? 'player.removeFavorite' : 'player.addFavorite');
   return (
     <button
       type="button"
-      className={isFavorite ? 'icon-button favorite favorite--active' : 'icon-button favorite'}
+      className={active ? 'icon-button favorite favorite--active' : 'icon-button favorite'}
       onClick={handleClick}
       disabled={isBusy}
-      aria-pressed={isFavorite}
+      aria-pressed={active}
       aria-label={label}
       title={label}
     >
-      <Icon name="heart" outline={!isFavorite} />
+      <Icon name="heart" outline={!active} />
     </button>
   );
 }
