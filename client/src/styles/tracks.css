@@ -11,6 +11,7 @@
   font-size: 1.9rem;
   font-weight: 900;
   letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
 }
 
 .section-note {
@@ -286,5 +287,143 @@
 
   .track-row__genre {
     display: none;
+  }
+}
+
+/* ---------- Пошук (рис. 4.3) ---------- */
+.page--search {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 960px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 10px 6px 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--input-bg);
+  transition: border-color 0.15s;
+}
+
+.search-box:focus-within {
+  border-color: var(--active-border);
+}
+
+.search-box--invalid,
+.search-box--invalid:focus-within {
+  border-color: var(--danger);
+}
+
+.search-box__icon {
+  flex: none;
+  color: var(--muted);
+}
+
+.search-box__input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.05rem;
+  outline: none;
+}
+
+/* Фокус показує рамка всього рядка пошуку (.search-box:focus-within). */
+.search-box__input:focus-visible {
+  outline: none;
+}
+
+.search-box__input::placeholder {
+  color: var(--muted);
+}
+
+/* Стандартний хрестик браузера замінено власною кнопкою. */
+.search-box__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.genre-tile {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 140px;
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card);
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+/* Декоративний повернутий квадрат у правому нижньому куті (як на макеті). */
+.genre-tile::after {
+  position: absolute;
+  right: -30px;
+  bottom: -40px;
+  width: 120px;
+  height: 140px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.14);
+  content: '';
+  transform: rotate(22deg);
+}
+
+.genre-tile:hover {
+  transform: translateY(-2px);
+}
+
+.results-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.results-more {
+  align-self: flex-start;
+  margin-top: 16px;
+}
+
+@media (max-width: 767px) {
+  .genre-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .genre-tile {
+    min-height: 96px;
+    padding: 14px;
+    font-size: 1.05rem;
+  }
+
+  .results-head {
+    flex-direction: column;
   }
 }

@@ -1,9 +1,26 @@
 /**
  * @module api/tracks
- * @description Звернення до Media Service (`/api/tracks`): посилання для відтворення та облік прослуховувань.
+ * @description Звернення до Media Service (`/api/tracks`, `/api/meta`): пошук, посилання для
+ * відтворення, облік прослуховувань і словники метаданих.
  */
 
 import { request } from './client.js';
+
+/**
+ * Пошук треків (UC-3) за назвою, виконавцем чи жанром (`q`) або точний фільтр за жанром (`genre`).
+ * Результати впорядковані за кількістю відтворень.
+ * @param {{q?: string, genre?: string, limit?: number, offset?: number}} params - параметри пошуку.
+ * @param {AbortSignal} [signal] - сигнал для скасування запиту.
+ * @returns {Promise<{tracks: object[], total: number, limit: number, offset: number}>} сторінка результатів.
+ */
+export function searchTracks({ q, genre, limit, offset }, signal) {
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (genre) params.set('genre', genre);
+  if (limit !== undefined) params.set('limit', String(limit));
+  if (offset !== undefined) params.set('offset', String(offset));
+  return request(`/tracks/search?${params}`, { signal });
+}
 
 /**
  * Отримує тимчасове pre-signed посилання S3 на аудіофайл треку (UC-7).
@@ -23,4 +40,13 @@ export function getStreamUrl(trackId) {
  */
 export function registerPlay(trackId) {
   return request(`/tracks/${encodeURIComponent(trackId)}/play`, { method: 'POST' });
+}
+
+/**
+ * Словники метаданих: жанри, настрої й тональності (для плиток жанрів і форм адміністратора).
+ * @param {AbortSignal} [signal] - сигнал для скасування запиту.
+ * @returns {Promise<{genres: string[], moods: string[], keys: string[]}>} словники.
+ */
+export function fetchVocabularies(signal) {
+  return request('/meta/vocabularies', { signal });
 }

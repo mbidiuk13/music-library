@@ -20,6 +20,22 @@
     "popular": "Популярне — Топ-100",
     "emptyLibrary": "У медіатеці поки немає треків"
   },
+  "search": {
+    "label": "Пошук треків",
+    "placeholder": "Знайти пісню, виконавця чи жанр…",
+    "clear": "Очистити пошук",
+    "genres": "Навігація за жанрами",
+    "queryTitle": "Результати за запитом «{{query}}»",
+    "genreTitle": "Жанр: {{genre}}",
+    "found_one": "Знайдено {{count}} трек",
+    "found_few": "Знайдено {{count}} треки",
+    "found_many": "Знайдено {{count}} треків",
+    "found_other": "Знайдено {{count}} трека",
+    "nothingFound": "Нічого не знайдено",
+    "nothingFoundHint": "Спробуйте інший запит або оберіть жанр",
+    "backToGenres": "До жанрів",
+    "showMore": "Показати ще"
+  },
   "nav": {
     "mainMenu": "Головне меню",
     "home": "Головна",
