@@ -14,6 +14,11 @@
   --surface: rgba(255, 255, 255, 0.03);
   --surface-hover: rgba(255, 255, 255, 0.06);
   --border: #2a2342;
+  --border-strong: #3a3158;
+
+  /* Поля форм */
+  --input-bg: #0d0a18;
+  --placeholder: #5f5878;
 
   /* Текст */
   --text: #ffffff;
@@ -24,6 +29,7 @@
   --accent-2: #c04cfd;
   --accent-grad: linear-gradient(90deg, #ff7a59, #c04cfd);
   --danger: #ff8fa3;
+  --danger-soft: rgba(255, 143, 163, 0.12);
 
   /* Активний пункт меню і другорядні кнопки */
   --active-bg: rgba(255, 122, 89, 0.1);

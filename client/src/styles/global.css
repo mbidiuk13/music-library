@@ -3,6 +3,7 @@
 @import './theme.css';
 @import './layout.css';
 @import './player.css';
+@import './forms.css';
 
 *,
 *::before,

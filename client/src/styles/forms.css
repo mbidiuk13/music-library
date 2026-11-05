@@ -1,0 +1,279 @@
+/* Сторінки входу, реєстрації й відновлення пароля (рис. 4.1 ТЗ), поля форм і повідомлення. */
+
+/* ---------- Каркас і картка ---------- */
+.auth-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 32px 16px;
+  background:
+    radial-gradient(circle at 12% 70%, rgba(192, 76, 253, 0.12), transparent 40%), var(--bg);
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 480px);
+  padding: 40px 36px 36px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--bg-side);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.auth-card__mark {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  box-shadow: 0 10px 40px rgba(255, 122, 89, 0.35);
+  transform: rotate(3deg);
+}
+
+.auth-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.auth-page__header {
+  text-align: center;
+}
+
+.auth-page__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 900;
+}
+
+.auth-page__title--brand {
+  font-size: 2.25rem;
+}
+
+.auth-page__subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.auth-page__switch {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- Поля ---------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field__label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field__input {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  transition: border-color 0.15s;
+}
+
+.field__input::placeholder {
+  color: var(--placeholder);
+}
+
+.field__input:hover {
+  border-color: var(--border-strong);
+}
+
+.field__input:focus {
+  border-color: var(--active-border);
+  outline: none;
+}
+
+.field__input--invalid,
+.field__input--invalid:hover,
+.field__input--invalid:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+
+.field__error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+/* Чекбокс згоди з умовами. */
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.checkbox input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--accent-1);
+  cursor: pointer;
+}
+
+.checkbox--invalid {
+  color: var(--danger);
+}
+
+/* Чеклист вимог до пароля. */
+.rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.rules__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rules__item--met {
+  color: var(--active-text);
+}
+
+/* ---------- Кнопки й посилання ---------- */
+.btn-primary--block,
+.btn-outline--block {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 1rem;
+}
+
+.btn-primary--block {
+  box-shadow: 0 10px 30px rgba(255, 122, 89, 0.25);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.btn-outline:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.link-accent {
+  color: var(--active-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-accent:hover,
+.link-accent--underline {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.divider::before,
+.divider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  content: '';
+}
+
+/* ---------- Повідомлення ---------- */
+.notice {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.notice--success {
+  border-color: var(--active-border);
+  background: var(--active-bg);
+  color: var(--active-text);
+}
+
+.notice--error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+@media (max-width: 767px) {
+  .auth-card {
+    padding: 32px 20px 24px;
+    border-radius: 22px;
+  }
+}

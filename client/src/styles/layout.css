@@ -170,34 +170,6 @@
   cursor: default;
 }
 
-/* ---------- Сторінки входу й реєстрації ---------- */
-.auth-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  min-height: 100%;
-  padding: 24px;
-  background: var(--bg);
-}
-
-.auth-layout__logo {
-  text-decoration: none;
-}
-
-.auth-layout__card {
-  width: min(100%, 420px);
-  padding: 32px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-}
-
-.auth-layout__card .page {
-  padding: 0;
-}
-
 /* ---------- Сторінки ---------- */
 .page {
   padding: 32px;

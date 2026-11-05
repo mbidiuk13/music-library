@@ -49,12 +49,18 @@ export function RequireAdmin() {
 }
 
 /**
- * Сторінки лише для гостей (вхід, реєстрація): авторизованого користувача веде на головну.
+ * Сторінки лише для гостей (вхід, реєстрація). Авторизованого користувача (зокрема одразу
+ * після входу) веде на сторінку, з якої його перенаправили на вхід, або на головну (UC-2).
  * @returns {JSX.Element} вкладений маршрут, індикатор або редірект.
  */
 export function GuestOnly() {
   const { status, isAuthenticated } = useAuth();
+  const location = useLocation();
   if (status === 'loading') return <SessionLoader />;
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  if (isAuthenticated) {
+    const from = location.state?.from;
+    const target = from ? `${from.pathname}${from.search ?? ''}` : '/';
+    return <Navigate to={target} replace />;
+  }
   return <Outlet />;
 }
