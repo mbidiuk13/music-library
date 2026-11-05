@@ -25,7 +25,7 @@ import { getToken, setToken, setUnauthorizedHandler } from '../api/client.js';
  * @property {boolean} isAuthenticated - чи увійшов користувач.
  * @property {boolean} isAdmin - чи має користувач роль адміністратора.
  * @property {(credentials: {email: string, password: string}) => Promise<AuthUser>} login - вхід.
- * @property {(data: object) => Promise<AuthUser>} register - реєстрація з автоматичним входом.
+ * @property {(data: object) => Promise<AuthUser>} register - реєстрація (без автоматичного входу, UC-1).
  * @property {() => void} logout - вихід: видаляє токен і переходить на сторінку привітання.
  */
 
@@ -99,15 +99,13 @@ export function AuthProvider({ children }) {
   );
 
   /**
-   * Реєстрація (UC-1); після неї користувач одразу авторизований.
+   * Реєстрація (UC-1). За постумовою UC-1 користувач після реєстрації переходить на сторінку
+   * входу, тому токен з відповіді сервера не зберігається — сесія починається лише після входу.
    * @param {object} data - дані форми реєстрації.
    * @returns {Promise<AuthUser>} новий користувач.
    * @throws {import('../api/client.js').ApiError} помилки валідації, 409 — пошта зайнята.
    */
-  const register = useCallback(
-    async (data) => startSession(await authApi.register(data)),
-    [startSession],
-  );
+  const register = useCallback(async (data) => (await authApi.register(data)).user, []);
 
   /**
    * Вихід з акаунту (UC-8): анулює токен на клієнті й веде на сторінку привітання.

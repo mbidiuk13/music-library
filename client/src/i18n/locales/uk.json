@@ -26,7 +26,11 @@
   "fields": {
     "email": "Електронна пошта",
     "emailPlaceholder": "user@example.com",
-    "password": "Пароль"
+    "password": "Пароль",
+    "passwordConfirm": "Повтор пароля",
+    "newPassword": "Новий пароль",
+    "username": "Ім'я",
+    "usernamePlaceholder": "Як до вас звертатися"
   },
   "validation": {
     "email": {
@@ -89,7 +93,12 @@
       }
     },
     "register": {
-      "title": "Реєстрація"
+      "title": "Створення акаунта",
+      "subtitle": "Зберігайте улюблені треки й отримуйте персональні добірки",
+      "acceptTerms": "Я погоджуюся з умовами використання сервісу",
+      "submit": "Зареєструватися",
+      "submitting": "Реєстрація…",
+      "haveAccount": "Уже маєте акаунт?"
     },
     "forgotPassword": {
       "title": "Відновлення пароля"
