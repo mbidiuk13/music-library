@@ -21,6 +21,8 @@ import { useAuth } from './AuthContext.jsx';
  * @typedef {object} FavoritesContextValue
  * @property {(trackId: string) => boolean} isFavorite - чи трек у «Улюблених».
  * @property {(trackId: string) => Promise<void>} toggleFavorite - додати трек або прибрати його.
+ * @property {(trackId: string, value: boolean) => void} markFavorite - оновити лише локальний стан,
+ *   коли трек додано до «Улюблених» чи прибрано з них іншим запитом (медіатека, «Додати до плейлиста»).
  */
 
 const FavoritesContext = createContext(/** @type {FavoritesContextValue|null} */ (null));
@@ -94,7 +96,10 @@ export function FavoritesProvider({ children }) {
 
   const isFavorite = useCallback((trackId) => ids.has(trackId), [ids]);
 
-  const value = useMemo(() => ({ isFavorite, toggleFavorite }), [isFavorite, toggleFavorite]);
+  const value = useMemo(
+    () => ({ isFavorite, toggleFavorite, markFavorite }),
+    [isFavorite, toggleFavorite, markFavorite],
+  );
 
   return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
 }

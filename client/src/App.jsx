@@ -13,7 +13,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import PlaylistDetailPage from './pages/PlaylistDetailPage.jsx';
-import PlaylistsPage from './pages/PlaylistsPage.jsx';
+import PlaylistsPage, { PlaylistsIndex } from './pages/PlaylistsPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
@@ -39,8 +39,10 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route element={<RequireAuth />}>
-          <Route path="/playlists" element={<PlaylistsPage />} />
-          <Route path="/playlists/:id" element={<PlaylistDetailPage />} />
+          <Route path="/playlists" element={<PlaylistsPage />}>
+            <Route index element={<PlaylistsIndex />} />
+            <Route path=":id" element={<PlaylistDetailPage />} />
+          </Route>
         </Route>
         <Route element={<RequireAdmin />}>
           <Route path="/admin" element={<AdminPage />} />

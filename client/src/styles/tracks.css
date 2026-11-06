@@ -127,6 +127,15 @@
 }
 
 /* ---------- Список треків ---------- */
+.track-table {
+  /* Ширина колонки дій: ♥ і «Додати до плейлиста» (у плейлисті — ще «Прибрати»). */
+  --track-actions-width: 80px;
+}
+
+.track-table--playlist {
+  --track-actions-width: 120px;
+}
+
 .track-list {
   display: flex;
   flex-direction: column;
@@ -138,7 +147,7 @@
 
 .track-row {
   display: grid;
-  grid-template-columns: 36px 56px minmax(0, 2fr) minmax(0, 1fr) 40px;
+  grid-template-columns: 36px 56px minmax(0, 2fr) minmax(0, 1fr) var(--track-actions-width);
   align-items: center;
   gap: 16px;
   padding: 8px 12px;
@@ -209,6 +218,7 @@
 .track-row__actions {
   display: flex;
   justify-content: flex-end;
+  gap: 4px;
 }
 
 /* ---------- Стани запитів ---------- */
@@ -275,7 +285,7 @@
   }
 
   .track-row {
-    grid-template-columns: 24px 48px minmax(0, 1fr) 40px;
+    grid-template-columns: 24px 48px minmax(0, 1fr) var(--track-actions-width);
     gap: 12px;
     padding: 6px 4px;
   }

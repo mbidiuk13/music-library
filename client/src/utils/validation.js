@@ -1,7 +1,8 @@
 /**
  * @module utils/validation
  * @description Клієнтська валідація форм. Правила дублюють серверні (modules/auth/password.rules.js,
- * modules/auth/auth.routes.js, modules/media/media.routes.js), щоб помилку було видно ще до
+ * modules/auth/auth.routes.js, modules/media/media.routes.js, modules/playlists/playlists.routes.js,
+ * middleware/upload.js), щоб помилку було видно ще до
  * надсилання запиту (UC-1: кнопка неактивна, поле підсвічується червоним). Сервер усе одно
  * перевіряє дані повторно — клієнтська валідація лише для зручності.
  *
@@ -16,7 +17,24 @@ export const LIMITS = Object.freeze({
   emailMax: 255,
   usernameMax: 100,
   queryMax: 100,
+  playlistTitleMax: 100,
+  trackTextMax: 255,
+  bpmMin: 40,
+  bpmMax: 250,
+  yearMin: 1,
+  yearMax: new Date().getFullYear() + 1,
+  /** Ліміт розміру аудіофайлу, МБ (MAX_UPLOAD_MB на сервері, ТЗ: до 50 МБ). */
+  uploadMaxMb: 50,
 });
+
+/** Дозволені розширення аудіофайлів (сервер додатково перевіряє MIME-тип і вміст файлу). */
+export const AUDIO_EXTENSIONS = Object.freeze(['.mp3', '.wav']);
+
+/** Кількість байтів в одному мегабайті. */
+const BYTES_IN_MB = 1024 * 1024;
+
+/** Ціле число без дробової частини (як `isInt` на сервері для значень форми). */
+const INTEGER_FORMAT = /^-?\d+$/;
 
 /** Дозволені символи пароля: друковані ASCII-символи без пробілу (коди 0x21–0x7E). */
 const PASSWORD_ALLOWED = /^[\x21-\x7E]*$/;
@@ -118,5 +136,72 @@ export function validateSearchQuery(query) {
   const value = query.trim();
   if (!value) return 'validation.search.required';
   if (value.length > LIMITS.queryMax) return 'validation.search.tooLong';
+  return null;
+}
+
+/**
+ * Перевіряє назву плейлиста (1–100 символів після обрізання пробілів), як сервер.
+ * @param {string} title - введена назва.
+ * @returns {string|null} ключ i18n помилки або null.
+ */
+export function validatePlaylistTitle(title) {
+  const value = title.trim();
+  if (!value) return 'validation.playlistTitle.required';
+  if (value.length > LIMITS.playlistTitleMax) return 'validation.playlistTitle.tooLong';
+  return null;
+}
+
+/**
+ * Перевіряє обов'язкове текстове поле метаданих треку (назва, виконавець): 1–255 символів.
+ * @param {string} value - введене значення.
+ * @param {'title'|'artist'} field - назва поля (для ключа повідомлення).
+ * @returns {string|null} ключ i18n помилки або null.
+ */
+export function validateTrackText(value, field) {
+  const text = value.trim();
+  if (!text) return `validation.track.${field}Required`;
+  if (text.length > LIMITS.trackTextMax) return `validation.track.${field}TooLong`;
+  return null;
+}
+
+/**
+ * Перевіряє, що значення обрано зі словника (жанр, тональність, настрій).
+ * @param {string} value - обране значення.
+ * @param {readonly string[]} options - допустимі значення з `GET /api/meta/vocabularies`.
+ * @param {'genre'|'key'|'mood'} field - назва поля (для ключа повідомлення).
+ * @returns {string|null} ключ i18n помилки або null.
+ */
+export function validateChoice(value, options, field) {
+  return options.includes(value) ? null : `validation.track.${field}Required`;
+}
+
+/**
+ * Перевіряє ціле число в діапазоні (темп і рік треку).
+ * @param {string} value - введене значення.
+ * @param {number} min - найменше допустиме значення.
+ * @param {number} max - найбільше допустиме значення.
+ * @param {'bpm'|'year'} field - назва поля (для ключа повідомлення).
+ * @returns {string|null} ключ i18n помилки або null.
+ */
+export function validateIntegerRange(value, min, max, field) {
+  const text = value.trim();
+  if (!INTEGER_FORMAT.test(text)) return `validation.track.${field}Range`;
+  const number = Number(text);
+  return number >= min && number <= max ? null : `validation.track.${field}Range`;
+}
+
+/**
+ * Перевіряє аудіофайл перед завантаженням (UC-9): формат MP3/WAV за розширенням і розмір ≤ 50 МБ.
+ * @param {File|null} file - обраний файл.
+ * @returns {string|null} ключ i18n помилки або null.
+ */
+export function validateAudioFile(file) {
+  if (!file) return 'validation.track.fileRequired';
+  const name = file.name.toLowerCase();
+  if (!AUDIO_EXTENSIONS.some((extension) => name.endsWith(extension))) {
+    return 'validation.track.fileFormat';
+  }
+  if (file.size > LIMITS.uploadMaxMb * BYTES_IN_MB) return 'validation.track.fileTooLarge';
+  if (file.size === 0) return 'validation.track.fileEmpty';
   return null;
 }
