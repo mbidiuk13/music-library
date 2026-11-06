@@ -133,30 +133,6 @@
   font-size: 0.85rem;
 }
 
-/* Чекбокс згоди з умовами. */
-.checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.4;
-  cursor: pointer;
-}
-
-.checkbox input {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin: 1px 0 0;
-  accent-color: var(--accent-1);
-  cursor: pointer;
-}
-
-.checkbox--invalid {
-  color: var(--danger);
-}
-
 /* Чеклист вимог до пароля. */
 .rules {
   display: flex;

@@ -8,7 +8,7 @@ import * as authService from './auth.service.js';
 
 /**
  * POST /api/auth/register — реєстрація нового користувача (UC-1).
- * @param {import('express').Request} req - тіло: `{email, username, password, passwordConfirm, acceptTerms}`.
+ * @param {import('express').Request} req - тіло: `{email, username, password, passwordConfirm}`.
  * @param {import('express').Response} res - 201 `{token, user}`.
  * @returns {Promise<void>}
  */

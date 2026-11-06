@@ -24,7 +24,6 @@ function registrationBody(overrides = {}) {
     username: 'Марія',
     password: PASSWORD,
     passwordConfirm: PASSWORD,
-    acceptTerms: true,
     ...overrides,
   };
 }
@@ -106,8 +105,6 @@ describeDb('POST /api/auth/register', () => {
       PASSWORD_MESSAGES.special,
     ],
     ['passwordConfirm', { passwordConfirm: 'Str0ng!Pas' }, 'Паролі не збігаються'],
-    ['acceptTerms', { acceptTerms: false }, 'Потрібно погодитися з умовами використання'],
-    ['acceptTerms', { acceptTerms: 'true' }, 'Потрібно погодитися з умовами використання'],
   ])('400: некоректне поле %s (%j)', async (field, overrides, message) => {
     const body = registrationBody(overrides);
     const res = await request(app).post('/api/auth/register').send(body);

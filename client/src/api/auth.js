@@ -16,8 +16,8 @@ export function login(credentials) {
 
 /**
  * Реєстрація нового користувача (UC-1).
- * @param {{email: string, username: string, password: string, passwordConfirm: string,
- *   acceptTerms: boolean}} data - дані форми реєстрації.
+ * @param {{email: string, username: string, password: string, passwordConfirm: string}} data -
+ *   дані форми реєстрації.
  * @returns {Promise<{token: string, user: object}>} токен доступу і дані користувача.
  */
 export function register(data) {

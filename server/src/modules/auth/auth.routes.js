@@ -79,9 +79,6 @@ router.post(
     .withMessage(`Ім'я не може бути довшим за ${USERNAME_MAX} символів`),
   newPasswordRule('password'),
   passwordConfirmRule(),
-  body('acceptTerms')
-    .custom((value) => value === true)
-    .withMessage('Потрібно погодитися з умовами використання'),
   validate,
   asyncHandler(controller.register),
 );

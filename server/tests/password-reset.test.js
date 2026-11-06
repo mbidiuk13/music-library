@@ -30,7 +30,6 @@ async function registerUser() {
       username: 'Тест',
       password: OLD_PASSWORD,
       passwordConfirm: OLD_PASSWORD,
-      acceptTerms: true,
     });
   return res.body.user;
 }

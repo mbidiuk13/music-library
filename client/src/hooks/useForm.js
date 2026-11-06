@@ -10,7 +10,7 @@ import { LIMITS } from '../utils/validation.js';
 
 /**
  * Хук стану форми.
- * @template {Record<string, string|boolean>} T
+ * @template {Record<string, string>} T
  * @param {T} initialValues - початкові значення полів.
  * @param {(values: T) => Partial<Record<keyof T, string|null>>} validate - функція валідації:
  *   повертає для кожного поля ключ i18n помилки або null. Має бути стабільною (оголошеною поза компонентом).
@@ -34,15 +34,14 @@ export default function useForm(initialValues, validate) {
   const isValid = Object.values(errors).every((error) => !error);
 
   /**
-   * Оновлює значення поля (для чекбокса — `checked`) і знімає серверну помилку цього поля.
+   * Оновлює значення поля і знімає серверну помилку цього поля.
    * @param {import('react').ChangeEvent<HTMLInputElement>} event - подія зміни.
    * @returns {void}
    */
   const handleChange = useCallback((event) => {
-    const { name, type, checked, value } = event.target;
-    setValues((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = event.target;
+    setValues((prev) => ({ ...prev, [name]: value }));
     setServerErrorsState((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
-    if (type === 'checkbox') setTouched((prev) => ({ ...prev, [name]: true }));
   }, []);
 
   /**

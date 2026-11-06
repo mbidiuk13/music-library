@@ -1,7 +1,7 @@
 /**
  * @module pages/RegisterPage
- * @description Сторінка реєстрації (UC-1, маршрут `/register`): пошта, ім'я, пароль, повтор пароля
- * і згода з умовами. Поки дані некоректні, кнопка неактивна, а поле з помилкою підсвічується
+ * @description Сторінка реєстрації (UC-1, маршрут `/register`): пошта, ім'я, пароль і повтор
+ * пароля. Поки дані некоректні, кнопка неактивна, а поле з помилкою підсвічується
  * червоним. Після успішної реєстрації — повідомлення і перехід на сторінку входу.
  */
 
@@ -26,7 +26,6 @@ const INITIAL_VALUES = Object.freeze({
   username: '',
   password: '',
   passwordConfirm: '',
-  acceptTerms: false,
 });
 
 /**
@@ -40,7 +39,6 @@ function validateRegistration(values) {
     username: validateUsername(values.username),
     password: validateNewPassword(values.password),
     passwordConfirm: validatePasswordConfirm(values.password, values.passwordConfirm),
-    acceptTerms: values.acceptTerms ? null : 'validation.acceptTerms.required',
   };
 }
 
@@ -75,7 +73,6 @@ export default function RegisterPage() {
         username: values.username.trim(),
         password: values.password,
         passwordConfirm: values.passwordConfirm,
-        acceptTerms: values.acceptTerms,
       });
       navigate('/welcome', { replace: true, state: { notice: 'registered', email } });
     } catch (err) {
@@ -88,8 +85,6 @@ export default function RegisterPage() {
       setIsSubmitting(false);
     }
   };
-
-  const termsError = fieldError('acceptTerms');
 
   return (
     <section className="auth-page">
@@ -141,24 +136,6 @@ export default function RegisterPage() {
           onBlur={handleBlur}
           error={fieldError('passwordConfirm')}
         />
-
-        <div className="field">
-          <label className={termsError ? 'checkbox checkbox--invalid' : 'checkbox'}>
-            <input
-              type="checkbox"
-              name="acceptTerms"
-              checked={values.acceptTerms}
-              onChange={handleChange}
-              aria-invalid={Boolean(termsError)}
-            />
-            <span>{t('pages.register.acceptTerms')}</span>
-          </label>
-          {termsError && (
-            <p className="field__error" role="alert">
-              {termsError}
-            </p>
-          )}
-        </div>
 
         {formError && (
           <p className="notice notice--error" role="alert">

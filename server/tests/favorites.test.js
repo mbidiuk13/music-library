@@ -166,7 +166,6 @@ describeDb('/api/favorites', () => {
       username: 'Нова слухачка',
       password: 'Passw0rd!x',
       passwordConfirm: 'Passw0rd!x',
-      acceptTerms: true,
     });
     expect(register.status).toBe(201);
     const login = await request(app)
