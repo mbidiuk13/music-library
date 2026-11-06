@@ -89,6 +89,23 @@ export default function PlaylistDetailPage() {
   };
 
   /**
+   * Трек з цього плейлиста додано до іншого плейлиста: оновлює картки медіатеки
+   * (новий плейлист з'являється, у наявного зростає кількість треків).
+   * @param {object} target - плейлист, до якого додано трек.
+   * @param {{created: boolean}} info - чи плейлист щойно створено.
+   * @returns {void}
+   */
+  const handleAddedElsewhere = (target, { created }) => {
+    updatePlaylists((list) =>
+      created
+        ? [...list, target]
+        : list.map((item) =>
+            item.id === target.id ? { ...item, track_count: item.track_count + 1 } : item,
+          ),
+    );
+  };
+
+  /**
    * Перейменовує плейлист (UC-11).
    * @param {string} title - нова назва.
    * @returns {Promise<void>}
@@ -183,6 +200,7 @@ export default function PlaylistDetailPage() {
           variant="playlist"
           showFavorite={!playlist.is_favorites}
           onRemove={handleRemove}
+          onAddedToPlaylist={handleAddedElsewhere}
         />
       )}
 

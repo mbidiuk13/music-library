@@ -24,7 +24,8 @@
       "genre": "Жанр",
       "added": "Додано",
       "actions": "Дії"
-    }
+    },
+    "addToPlaylist": "Додати «{{title}}» до плейлиста"
   },
   "home": {
     "recommended": "Підібрано для вас",
@@ -231,5 +232,19 @@
   "playlists": {
     "titleLabel": "Назва плейлиста",
     "titlePlaceholder": "Напр. «Для пробіжки»"
+  },
+  "addToPlaylist": {
+    "title": "Додати до плейлиста",
+    "chooseLabel": "Ваші плейлисти",
+    "add": "Додати",
+    "adding": "Додавання…",
+    "stateAdded": "Додано",
+    "stateExists": "Уже є",
+    "added": "Трек додано до плейлиста «{{title}}»",
+    "alreadyIn": "Цей трек уже є в плейлисті «{{title}}»",
+    "created": "Створено плейлист «{{title}}» з цим треком",
+    "newPlaylist": "Або створіть новий плейлист",
+    "createAndAdd": "Створити й додати",
+    "done": "Готово"
   }
 }

@@ -329,3 +329,143 @@
     display: none;
   }
 }
+
+/* ---------- Вікно «Додати до плейлиста» ---------- */
+.picker__track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -6px 0 0;
+}
+
+.picker__track-cover {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+
+.picker__track-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.picker__track-title {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker__track-artist {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.picker__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 264px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.picker__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.picker__item:hover:not(:disabled) {
+  border-color: var(--active-border);
+  background: var(--active-bg);
+}
+
+.picker__item:disabled {
+  cursor: default;
+}
+
+.picker__cover {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.picker__cover--favorites {
+  background: var(--accent-grad);
+  color: var(--text);
+}
+
+.picker__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker__state {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--active-text);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.picker__item--done .picker__state {
+  color: var(--muted);
+}
+
+/* Підпис, поле й помилка — у лівій колонці, кнопка — праворуч на рівні поля введення
+   (навіть коли під полем з'являється текст помилки). */
+.picker__create {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.picker__create .field {
+  display: contents;
+}
+
+.picker__create .field__head,
+.picker__create .field__input,
+.picker__create .field__error {
+  grid-column: 1;
+}
+
+.picker__create .btn-secondary {
+  grid-row: 2;
+  grid-column: 2;
+}
+
+@media (max-width: 767px) {
+  .picker__create {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .picker__create .btn-secondary {
+    grid-row: auto;
+    grid-column: 1;
+  }
+}

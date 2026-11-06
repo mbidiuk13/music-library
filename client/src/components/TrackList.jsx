@@ -1,7 +1,8 @@
 /**
  * @module components/TrackList
  * @description Список треків (Топ-100 на рис. 4.2, результати пошуку на рис. 4.3, треки плейлиста
- * на рис. 4.4): номер, обкладинка, назва й виконавець, жанр, ♥ (лише авторизованим) і кнопка Play.
+ * на рис. 4.4): номер, обкладинка, назва й виконавець, жанр, «Додати до плейлиста» і ♥ (лише
+ * авторизованим) і кнопка Play.
  * Натискання Play відтворює трек через PlayerContext, а весь список стає чергою відтворення.
  * У варіанті для плейлиста є рядок заголовків, колонка «Додано» і дія «Прибрати з плейлиста».
  */
@@ -12,6 +13,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { usePlayer } from '../context/PlayerContext.jsx';
 import { coverGradient } from '../utils/cover.js';
 import { formatAddedAt } from '../utils/format.js';
+import AddToPlaylistDialog from './AddToPlaylistDialog.jsx';
 import FavoriteButton from './FavoriteButton.jsx';
 import Icon from './Icon.jsx';
 
@@ -23,8 +25,10 @@ import Icon from './Icon.jsx';
  * @param {boolean} props.isCurrent - чи це поточний трек плеєра.
  * @param {boolean} props.isPlaying - чи грає зараз поточний трек.
  * @param {boolean} props.showFavorite - чи показувати сердечко.
+ * @param {boolean} props.canAddToPlaylist - чи показувати дію «Додати до плейлиста».
  * @param {boolean} props.showAddedAt - чи показувати дату додавання до плейлиста.
  * @param {() => void} props.onPlay - відтворення / пауза.
+ * @param {() => void} props.onAddToPlaylist - відкриття вікна «Додати до плейлиста».
  * @param {(() => Promise<void>)|undefined} props.onRemove - вилучення з плейлиста (якщо дія доступна).
  * @returns {JSX.Element} рядок.
  */
@@ -34,8 +38,10 @@ function TrackRow({
   isCurrent,
   isPlaying,
   showFavorite,
+  canAddToPlaylist,
   showAddedAt,
   onPlay,
+  onAddToPlaylist,
   onRemove,
 }) {
   const { t } = useTranslation();
@@ -44,6 +50,7 @@ function TrackRow({
     title: track.title,
   });
   const removeLabel = t('tracks.removeFromPlaylist', { title: track.title });
+  const addLabel = t('tracks.addToPlaylist', { title: track.title });
 
   /**
    * Вилучає трек; поки запит виконується, кнопка неактивна. Після успіху рядок прибирає
@@ -88,6 +95,18 @@ function TrackRow({
         </span>
       )}
       <span className="track-row__actions">
+        {canAddToPlaylist && (
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onAddToPlaylist}
+            aria-haspopup="dialog"
+            aria-label={addLabel}
+            title={addLabel}
+          >
+            <Icon name="playlistAdd" />
+          </button>
+        )}
         {showFavorite && <FavoriteButton trackId={track.id} />}
         {onRemove && (
           <button
@@ -114,12 +133,22 @@ function TrackRow({
  * @param {'default'|'playlist'} [props.variant='default'] - звичайний список або таблиця треків плейлиста.
  * @param {boolean} [props.showFavorite] - показувати сердечка (за замовчуванням — авторизованим).
  * @param {(track: object) => Promise<void>} [props.onRemove] - вилучення треку з плейлиста.
+ * @param {(playlist: object, info: {created: boolean}) => void} [props.onAddedToPlaylist] - трек
+ *   додано до плейлиста через «Додати до плейлиста».
  * @returns {JSX.Element} список.
  */
-export default function TrackList({ tracks, label, variant = 'default', showFavorite, onRemove }) {
+export default function TrackList({
+  tracks,
+  label,
+  variant = 'default',
+  showFavorite,
+  onRemove,
+  onAddedToPlaylist,
+}) {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { currentTrack, isPlaying, playTrack } = usePlayer();
+  const [pickerTrack, setPickerTrack] = useState(/** @type {object|null} */ (null));
   const isPlaylist = variant === 'playlist';
   return (
     <div className={isPlaylist ? 'track-table track-table--playlist' : 'track-table'}>
@@ -141,12 +170,21 @@ export default function TrackList({ tracks, label, variant = 'default', showFavo
             isCurrent={currentTrack?.id === track.id}
             isPlaying={isPlaying}
             showFavorite={showFavorite ?? isAuthenticated}
+            canAddToPlaylist={isAuthenticated}
             showAddedAt={isPlaylist}
             onPlay={() => playTrack(track, tracks)}
+            onAddToPlaylist={() => setPickerTrack(track)}
             onRemove={onRemove && (() => onRemove(track))}
           />
         ))}
       </ol>
+      {pickerTrack && (
+        <AddToPlaylistDialog
+          track={pickerTrack}
+          onClose={() => setPickerTrack(null)}
+          onAdded={onAddedToPlaylist}
+        />
+      )}
     </div>
   );
 }
