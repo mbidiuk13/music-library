@@ -181,3 +181,99 @@
     flex-basis: 100%;
   }
 }
+
+/* ---------- Кнопка «Завантажити аудіо» й повідомлення ---------- */
+.btn-primary--glow {
+  box-shadow: 0 10px 30px rgba(255, 122, 89, 0.25);
+}
+
+.admin-notice {
+  margin-bottom: 20px;
+}
+
+/* ---------- Форма треку (завантаження й редагування) ---------- */
+.track-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 16px;
+}
+
+.track-form__wide {
+  grid-column: 1 / -1;
+}
+
+.track-form__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.field__select {
+  appearance: none;
+  padding-right: 40px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) 50%,
+    calc(100% - 15px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
+  cursor: pointer;
+}
+
+/* Значення ще не обрано — текст «Оберіть зі списку» виглядає як підказка. */
+.field__select--empty {
+  color: var(--placeholder);
+}
+
+.field__select option {
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+.file-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  background: var(--input-bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.file-input:hover,
+.file-input:focus-visible {
+  border-color: var(--active-border);
+}
+
+.file-input--invalid {
+  border-color: var(--danger);
+  border-style: solid;
+}
+
+.file-input::file-selector-button {
+  margin-right: 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--active-border);
+  border-radius: 8px;
+  background: var(--active-bg);
+  color: var(--active-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .track-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

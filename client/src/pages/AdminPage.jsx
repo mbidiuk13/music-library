@@ -1,17 +1,19 @@
 /**
  * @module pages/AdminPage
  * @description Адмін-панель «Керування системою» (рис. 4.5 ТЗ, маршрут `/admin`, лише роль admin):
- * таблиця треків медіатеки з пошуком за ID або назвою, видалення треку з підтвердженням.
+ * таблиця треків медіатеки з пошуком за ID або назвою, завантаження аудіо з метаданими (UC-9),
+ * редагування метаданих (UC-6) і видалення треку з підтвердженням.
  * ID показується скорочено — перші 8 символів UUID (повний — у підказці). Звичайний користувач
  * сюди не потрапляє (RequireAdmin → сторінка 403), а сервер додатково перевіряє роль.
  */
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { deleteTrack, fetchAdminTracks } from '../api/admin.js';
+import { deleteTrack, fetchAdminTracks, updateTrack, uploadTrack } from '../api/admin.js';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Icon from '../components/Icon.jsx';
 import { EmptyState, RequestError, TrackListSkeleton } from '../components/RequestState.jsx';
+import TrackFormDialog from '../components/TrackFormDialog.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useRequest from '../hooks/useRequest.js';
 import { errorMessage } from '../utils/errors.js';
@@ -35,11 +37,12 @@ const NO_CHANGES = Object.freeze({ load: null, more: [], removedIds: [], updated
 
 /**
  * Рядок таблиці треків.
- * @param {{track: object, onDelete: () => void}} props - трек і дія видалення.
+ * @param {{track: object, onEdit: () => void, onDelete: () => void}} props - трек і дії з ним.
  * @returns {JSX.Element} рядок таблиці.
  */
-function TrackTableRow({ track, onDelete }) {
+function TrackTableRow({ track, onEdit, onDelete }) {
   const { t } = useTranslation();
+  const editLabel = t('admin.editTrack', { title: track.title });
   const deleteLabel = t('admin.deleteTrack', { title: track.title });
   return (
     <tr>
@@ -62,6 +65,16 @@ function TrackTableRow({ track, onDelete }) {
       <td className="admin-table__bpm">{track.bpm}</td>
       <td>
         <span className="admin-table__actions">
+          <button
+            type="button"
+            className="icon-button"
+            onClick={onEdit}
+            aria-haspopup="dialog"
+            aria-label={editLabel}
+            title={editLabel}
+          >
+            <Icon name="edit" />
+          </button>
           <button
             type="button"
             className="icon-button icon-button--danger"
@@ -108,6 +121,8 @@ export default function AdminPage() {
   const hasMore = Boolean(data) && loadedCount < data.total;
 
   const [deleting, setDeleting] = useState(/** @type {object|null} */ (null));
+  const [form, setForm] = useState(/** @type {{track: object|null}|null} */ (null));
+  const [notice, setNotice] = useState(/** @type {string|null} */ (null));
 
   /**
    * Змінює локальний стан списку для поточного запиту.
@@ -143,6 +158,28 @@ export default function AdminPage() {
   };
 
   /**
+   * Зберігає форму треку: завантажує новий трек (UC-9) або оновлює метадані наявного (UC-6).
+   * Новий трек з'являється першим після повторного завантаження таблиці (новіші — першими);
+   * відредагований оновлюється на місці.
+   * @param {FormData|object} payload - FormData з файлом (новий трек) або 7 полів метаданих.
+   * @returns {Promise<void>}
+   * @throws {import('../api/client.js').ApiError} помилка сервера (показується у формі).
+   */
+  const handleSave = async (payload) => {
+    if (form.track) {
+      const { track } = await updateTrack(form.track.id, payload);
+      updateChanges((base) => ({ updated: { ...base.updated, [track.id]: track } }));
+      setNotice(t('admin.saved', { title: track.title }));
+    } else {
+      const { track } = await uploadTrack(payload);
+      setChanges(NO_CHANGES);
+      reload();
+      setNotice(t('admin.uploaded', { title: track.title }));
+    }
+    setForm(null);
+  };
+
+  /**
    * Видаляє трек (запис у БД каскадно з плейлистами й історією, аудіофайл — з S3).
    * @returns {Promise<void>}
    * @throws {import('../api/client.js').ApiError} помилка сервера (показується у вікні).
@@ -153,8 +190,9 @@ export default function AdminPage() {
     } catch (err) {
       if (err.code !== 'TRACK_NOT_FOUND') throw err;
     }
-    const { id } = deleting;
+    const { id, title } = deleting;
     updateChanges((base) => ({ removedIds: [...base.removedIds, id] }));
+    setNotice(t('admin.deleted', { title }));
     setDeleting(null);
   };
 
@@ -162,7 +200,23 @@ export default function AdminPage() {
     <div className="page page--admin">
       <header className="page-head">
         <h1 className="page-head__title">{t('admin.title')}</h1>
+        <button
+          type="button"
+          className="btn-primary btn-primary--glow"
+          onClick={() => {
+            setNotice(null);
+            setForm({ track: null });
+          }}
+          aria-haspopup="dialog"
+        >
+          <Icon name="upload" />
+          {t('admin.upload')}
+        </button>
       </header>
+
+      <div aria-live="polite">
+        {notice && <p className="notice notice--success admin-notice">{notice}</p>}
+      </div>
 
       <section className="admin-panel" aria-labelledby="admin-table-title">
         <div className="admin-panel__head">
@@ -219,7 +273,18 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {tracks.map((track) => (
-                  <TrackTableRow key={track.id} track={track} onDelete={() => setDeleting(track)} />
+                  <TrackTableRow
+                    key={track.id}
+                    track={track}
+                    onEdit={() => {
+                      setNotice(null);
+                      setForm({ track });
+                    }}
+                    onDelete={() => {
+                      setNotice(null);
+                      setDeleting(track);
+                    }}
+                  />
                 ))}
               </tbody>
             </table>
@@ -243,6 +308,9 @@ export default function AdminPage() {
         )}
       </section>
 
+      {form && (
+        <TrackFormDialog track={form.track} onSubmit={handleSave} onClose={() => setForm(null)} />
+      )}
       {deleting && (
         <ConfirmDialog
           title={t('admin.deleteTitle', { title: deleting.title })}

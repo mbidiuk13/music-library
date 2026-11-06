@@ -18,6 +18,9 @@
 export default function SelectField({ name, label, options, placeholder, error, ...selectProps }) {
   const id = `field-${name}`;
   const errorId = `${id}-error`;
+  const classes = ['field__input', 'field__select'];
+  if (!selectProps.value) classes.push('field__select--empty');
+  if (error) classes.push('field__input--invalid');
   return (
     <div className="field">
       <div className="field__head">
@@ -28,9 +31,7 @@ export default function SelectField({ name, label, options, placeholder, error, 
       <select
         id={id}
         name={name}
-        className={
-          error ? 'field__input field__select field__input--invalid' : 'field__input field__select'
-        }
+        className={classes.join(' ')}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
         {...selectProps}
