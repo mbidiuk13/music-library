@@ -60,6 +60,8 @@ const URL_EXPIRY_MARGIN_MS = 30_000;
  * @property {() => void} prev - попередній трек або на початок поточного.
  * @property {(time: number) => void} seek - перемотати на позицію (секунди).
  * @property {(volume: number) => void} setVolume - змінити гучність.
+ * @property {(track: Track) => void} updateTrackInfo - оновити метадані треку в черзі (після
+ *   редагування адміністратором), не перериваючи відтворення.
  */
 
 const PlayerContext = createContext(/** @type {PlayerContextValue|null} */ (null));
@@ -290,6 +292,22 @@ export function PlayerProvider({ children }) {
     localStorage.setItem(VOLUME_KEY, String(clamped));
   }, []);
 
+  /**
+   * Оновлює метадані треку в черзі (назву, виконавця тощо) після редагування в адмін-панелі (UC-6),
+   * щоб плеєр показував нову назву. Відтворення не переривається; якщо трека в черзі немає —
+   * нічого не змінюється.
+   * @param {Track} track - оновлений трек (з тим самим id).
+   * @returns {void}
+   */
+  const updateTrackInfo = useCallback((track) => {
+    if (!queueRef.current.some((item) => item.id === track.id)) return;
+    const nextQueue = queueRef.current.map((item) =>
+      item.id === track.id ? { ...item, ...track } : item,
+    );
+    queueRef.current = nextQueue;
+    setQueue(nextQueue);
+  }, []);
+
   // Гучність елемента <audio> слідує за станом.
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
@@ -380,6 +398,7 @@ export function PlayerProvider({ children }) {
       prev,
       seek,
       setVolume,
+      updateTrackInfo,
     }),
     [
       queue,
@@ -395,6 +414,7 @@ export function PlayerProvider({ children }) {
       prev,
       seek,
       setVolume,
+      updateTrackInfo,
     ],
   );
 

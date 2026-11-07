@@ -14,6 +14,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Icon from '../components/Icon.jsx';
 import { EmptyState, RequestError, TrackListSkeleton } from '../components/RequestState.jsx';
 import TrackFormDialog from '../components/TrackFormDialog.jsx';
+import { usePlayer } from '../context/PlayerContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useRequest from '../hooks/useRequest.js';
@@ -98,6 +99,7 @@ function TrackTableRow({ track, onEdit, onDelete }) {
 export default function AdminPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { updateTrackInfo } = usePlayer();
   const [query, setQuery] = useState('');
   const searchQuery = useDebouncedValue(query.trim(), 300);
 
@@ -161,7 +163,8 @@ export default function AdminPage() {
   /**
    * Зберігає форму треку: завантажує новий трек (UC-9) або оновлює метадані наявного (UC-6).
    * Новий трек з'являється першим після повторного завантаження таблиці (новіші — першими);
-   * відредагований оновлюється на місці.
+   * відредагований оновлюється на місці — і в таблиці, і в черзі плеєра (якщо він зараз грає,
+   * плеєр одразу показує нову назву).
    * @param {FormData|object} payload - FormData з файлом (новий трек) або 7 полів метаданих.
    * @returns {Promise<void>}
    * @throws {import('../api/client.js').ApiError} помилка сервера (показується у формі).
@@ -170,6 +173,7 @@ export default function AdminPage() {
     if (form.track) {
       const { track } = await updateTrack(form.track.id, payload);
       updateChanges((base) => ({ updated: { ...base.updated, [track.id]: track } }));
+      updateTrackInfo(track);
       showToast(t('admin.saved', { title: track.title }));
     } else {
       const { track } = await uploadTrack(payload);
