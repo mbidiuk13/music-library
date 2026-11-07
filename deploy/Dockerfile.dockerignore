@@ -1,0 +1,13 @@
+# Контекст збірки deploy/Dockerfile: до образу потрапляє лише перелічене нижче
+# (без .env, node_modules, client/dist, server/media і документів).
+*
+!package.json
+!package-lock.json
+!database/
+!server/package.json
+!server/src/
+!server/scripts/
+!client/package.json
+!client/index.html
+!client/vite.config.js
+!client/src/

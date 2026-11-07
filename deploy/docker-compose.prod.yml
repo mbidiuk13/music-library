@@ -1,0 +1,45 @@
+# Продакшен: застосунок (app) + PostgreSQL. Аудіо — у справжньому AWS S3 (окремий prod-бакет).
+# HTTPS і проксі — nginx на хост-машині (deploy/nginx.conf), тому порт app відкрито лише для 127.0.0.1.
+#
+# Запуск з кореня репозиторію (змінні — з кореневого .env):
+#   docker compose --env-file .env -f deploy/docker-compose.prod.yml up -d --build
+# Зазвичай це робить deploy/deploy.sh.
+
+name: music-library
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Задайте POSTGRES_USER у .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD у .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Задайте POSTGRES_DB у .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: music-library:latest
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # БД — сервіс postgres у мережі compose (замінює DATABASE_URL з .env).
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:4000:4000'
+
+volumes:
+  pgdata:
