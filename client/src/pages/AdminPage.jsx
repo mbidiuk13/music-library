@@ -63,7 +63,10 @@ function TrackTableRow({ track, onEdit, onDelete }) {
       <td>
         <span className="chip">{track.genre}</span>
       </td>
-      <td className="admin-table__bpm">{track.bpm}</td>
+      <td className="admin-table__bpm">
+        {track.bpm}
+        <span className="admin-table__unit"> {t('admin.columns.bpm')}</span>
+      </td>
       <td>
         <span className="admin-table__actions">
           <button

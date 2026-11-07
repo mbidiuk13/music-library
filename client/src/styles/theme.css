@@ -48,7 +48,15 @@
   --radius-control: 10px;
   --sidebar-width: 240px;
   --player-height: 84px;
+  --topbar-height: 56px;
   --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   color-scheme: dark;
+}
+
+/* На телефоні плеєр нижчий (спрощений), від його висоти рахується відступ toast-сповіщень. */
+@media (max-width: 767px) {
+  :root {
+    --player-height: 92px;
+  }
 }

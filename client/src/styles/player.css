@@ -216,12 +216,20 @@
   opacity: 1;
 }
 
-/* ---------- Вузькі екрани: спрощений плеєр (детально — етап 9) ---------- */
+/* ---------- Телефон: спрощений плеєр — трек і кнопки в рядку, під ними прогрес на всю ширину;
+   без гучності (її регулюють кнопками телефона) і без «Попереднього» ---------- */
 @media (max-width: 767px) {
   .player {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
-    padding: 8px 12px;
+    grid-template-areas:
+      'track controls'
+      'progress progress';
+    gap: 2px 12px;
+    padding: 8px 12px 4px;
+  }
+
+  .player__track {
+    grid-area: track;
   }
 
   .player__cover {
@@ -229,9 +237,28 @@
     height: 40px;
   }
 
-  .player__progress,
-  .player__volume,
-  .player__controls .icon-button {
+  .player__center {
+    display: contents;
+  }
+
+  .player__controls {
+    grid-area: controls;
+    gap: 4px;
+  }
+
+  .player__controls .icon-button:first-child,
+  .player__volume {
     display: none;
+  }
+
+  .player__progress {
+    grid-area: progress;
+    gap: 8px;
+    max-width: none;
+  }
+
+  .player__time {
+    min-width: 32px;
+    font-size: 0.7rem;
   }
 }

@@ -251,43 +251,94 @@
   width: min(440px, 100%);
 }
 
-/* ---------- Вузькі екрани (детальна адаптивність — етап 9) ---------- */
+/* ---------- Верхня панель і затемнення — лише на телефоні (див. нижче) ---------- */
+.topbar,
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ---------- Телефон (< 768px): меню згорнуте у висувну панель ---------- */
 @media (max-width: 767px) {
   .layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
+      'topbar'
       'content'
-      'player'
-      'sidebar';
+      'player';
   }
 
+  .topbar {
+    display: flex;
+    grid-area: topbar;
+    align-items: center;
+    gap: 8px;
+    height: var(--topbar-height);
+    padding: 0 12px 0 6px;
+    background: var(--bg-side);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar__menu {
+    width: 44px;
+    height: 44px;
+    color: var(--text);
+  }
+
+  .topbar__logo {
+    text-decoration: none;
+  }
+
+  /* Висувне меню під верхньою панеллю: кнопка «Закрити меню» лишається доступною. */
   .sidebar {
-    flex-direction: row;
-    padding: 8px;
-    border-top: 1px solid var(--border);
-    border-right: 0;
+    position: fixed;
+    z-index: 30;
+    inset: var(--topbar-height) auto 0 0;
+    width: min(280px, 85vw);
+    padding-top: 16px;
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition:
+      transform 0.25s ease,
+      visibility 0s linear 0.25s;
   }
 
-  .sidebar__logo,
-  .sidebar__account {
+  .layout--menu-open .sidebar {
+    visibility: visible;
+    transform: none;
+    box-shadow: 16px 0 40px rgba(0, 0, 0, 0.5);
+    transition: transform 0.25s ease;
+  }
+
+  .sidebar__logo {
     display: none;
   }
 
-  .nav {
-    flex: 1;
-    flex-direction: row;
-    justify-content: space-around;
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 20;
+    inset: var(--topbar-height) 0 0;
+    background: rgba(5, 3, 12, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
   }
 
-  .nav__link {
-    flex-direction: column;
-    gap: 4px;
-    padding: 6px 8px;
-    font-size: 0.75rem;
+  .layout--menu-open .sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .page {
     padding: 20px 16px;
+  }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .layout--menu-open .sidebar,
+  .sidebar-backdrop {
+    transition: none;
   }
 }

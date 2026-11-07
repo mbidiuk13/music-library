@@ -2,7 +2,8 @@
  * @module components/Sidebar
  * @description Бічне меню (рис. 4.2–4.5 ТЗ): логотип, навігація і блок користувача.
  * Пункт «Медіатека» бачать лише авторизовані, «Адмін-панель» — лише адміністратор
- * (на сервері ці розділи додатково захищені).
+ * (на сервері ці розділи додатково захищені). На телефоні меню висувне: його відкриває кнопка
+ * у верхній панелі (Layout), а вибір пункту меню закриває його.
  */
 
 import { Link, NavLink } from 'react-router-dom';
@@ -20,9 +21,12 @@ const navLinkClass = ({ isActive }) => (isActive ? 'nav__link nav__link--active'
 
 /**
  * Бічне меню застосунку.
+ * @param {object} props - властивості.
+ * @param {string} props.id - id елемента (на нього посилається кнопка меню через aria-controls).
+ * @param {() => void} props.onNavigate - вибрано пункт меню (закриває висувне меню на телефоні).
  * @returns {JSX.Element} розмітка меню.
  */
-export default function Sidebar() {
+export default function Sidebar({ id, onNavigate }) {
   const { t } = useTranslation();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
@@ -34,8 +38,8 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="sidebar">
-      <Link to="/" className="sidebar__logo">
+    <aside id={id} className="sidebar">
+      <Link to="/" className="sidebar__logo" onClick={onNavigate}>
         <Logo />
       </Link>
 
@@ -43,7 +47,13 @@ export default function Sidebar() {
         {items
           .filter((item) => item.visible)
           .map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={navLinkClass}
+              onClick={onNavigate}
+            >
               <Icon name={item.icon} />
               <span>{item.label}</span>
             </NavLink>
@@ -65,7 +75,10 @@ export default function Sidebar() {
             <button
               type="button"
               className="icon-button"
-              onClick={logout}
+              onClick={() => {
+                onNavigate();
+                logout();
+              }}
               aria-label={t('auth.logout')}
               title={t('auth.logout')}
             >
@@ -75,7 +88,7 @@ export default function Sidebar() {
         ) : (
           <div className="account account--guest">
             <p className="account__hint">{t('auth.loginHint')}</p>
-            <Link to="/welcome" className="btn-primary">
+            <Link to="/welcome" className="btn-primary" onClick={onNavigate}>
               {t('auth.login')}
             </Link>
           </div>
