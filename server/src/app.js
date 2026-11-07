@@ -6,9 +6,10 @@
 
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import config from './config/index.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import securityHeaders from './middleware/securityHeaders.js';
+import clientApp from './middleware/clientApp.js';
 import { authenticate } from './middleware/auth.js';
 import requireRole from './middleware/requireRole.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -18,13 +19,18 @@ import recommendationRoutes from './modules/recommendations/recommendation.route
 
 /**
  * Створює екземпляр Express-застосунку з базовими заходами безпеки та маршрутами API.
+ * У продакшені (NODE_ENV=production) той самий застосунок роздає і зібраний React-клієнт.
+ * @param {object} [options] - параметри створення.
+ * @param {string|null} [options.clientDist] - тека зі збіркою клієнта, яку треба роздавати;
+ *   за замовчуванням `config.clientDist` у продакшені і `null` (лише API) в інших режимах.
  * @returns {import('express').Express} налаштований застосунок.
+ * @throws {Error} якщо роздачу клієнта ввімкнено, а збірки немає.
  */
-export function createApp() {
+export function createApp({ clientDist = config.isProduction ? config.clientDist : null } = {}) {
   const app = express();
 
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(securityHeaders(config.s3));
   app.use(cors({ origin: config.clientUrl }));
   app.use(express.json({ limit: '100kb' }));
 
@@ -49,6 +55,7 @@ export function createApp() {
   app.use('/api/admin/tracks', adminTrackRouter);
 
   app.use('/api', notFound);
+  if (clientDist) app.use(clientApp(clientDist));
   app.use(errorHandler);
 
   return app;
