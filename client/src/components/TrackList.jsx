@@ -154,7 +154,7 @@ export default function TrackList({
     <div className={isPlaylist ? 'track-table track-table--playlist' : 'track-table'}>
       {isPlaylist && (
         <div className="track-row track-row--head" aria-hidden="true">
-          <span className="track-row__position">#</span>
+          <span className="track-row__position">{t('tracks.columns.position')}</span>
           <span className="track-row__head-title">{t('tracks.columns.title')}</span>
           <span>{t('tracks.columns.genre')}</span>
           <span>{t('tracks.columns.added')}</span>

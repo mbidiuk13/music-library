@@ -57,5 +57,5 @@ export function shortId(id) {
  * @returns {string} напр. «Спокійний».
  */
 export function displayMood(mood) {
-  return mood ? mood.charAt(0).toLocaleUpperCase('uk') + mood.slice(1) : '';
+  return mood ? mood.charAt(0).toLocaleUpperCase(i18n.language) + mood.slice(1) : '';
 }
