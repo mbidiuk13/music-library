@@ -3,7 +3,7 @@
  * @description Встановлення нового пароля за посиланням з листа (UC-10, маршрут
  * `/reset-password?token=…`). Новий пароль перевіряється за тими самими правилами, що й під час
  * реєстрації. Якщо посилання прострочене чи вже використане — повідомлення і пропозиція
- * повторити запит; після успішної зміни — перехід на сторінку входу.
+ * повторити запит; після успішної зміни — toast-сповіщення і перехід на сторінку входу.
  */
 
 import { useState } from 'react';
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { resetPassword } from '../api/auth.js';
 import FormField from '../components/FormField.jsx';
 import PasswordRules from '../components/PasswordRules.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import useForm from '../hooks/useForm.js';
 import { errorMessage } from '../utils/errors.js';
 import { validateNewPassword, validatePasswordConfirm } from '../utils/validation.js';
@@ -56,6 +57,7 @@ function InvalidLink() {
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
 
@@ -82,7 +84,8 @@ export default function ResetPasswordPage() {
         password: values.password,
         passwordConfirm: values.passwordConfirm,
       });
-      navigate('/welcome', { replace: true, state: { notice: 'passwordChanged' } });
+      showToast(t('pages.welcome.notices.passwordChanged'));
+      navigate('/welcome', { replace: true });
     } catch (err) {
       setIsSubmitting(false);
       const tokenRejected =

@@ -14,6 +14,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Icon from '../components/Icon.jsx';
 import { EmptyState, RequestError, TrackListSkeleton } from '../components/RequestState.jsx';
 import TrackFormDialog from '../components/TrackFormDialog.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useRequest from '../hooks/useRequest.js';
 import { errorMessage } from '../utils/errors.js';
@@ -96,6 +97,7 @@ function TrackTableRow({ track, onEdit, onDelete }) {
  */
 export default function AdminPage() {
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [query, setQuery] = useState('');
   const searchQuery = useDebouncedValue(query.trim(), 300);
 
@@ -122,7 +124,6 @@ export default function AdminPage() {
 
   const [deleting, setDeleting] = useState(/** @type {object|null} */ (null));
   const [form, setForm] = useState(/** @type {{track: object|null}|null} */ (null));
-  const [notice, setNotice] = useState(/** @type {string|null} */ (null));
 
   /**
    * Змінює локальний стан списку для поточного запиту.
@@ -169,12 +170,12 @@ export default function AdminPage() {
     if (form.track) {
       const { track } = await updateTrack(form.track.id, payload);
       updateChanges((base) => ({ updated: { ...base.updated, [track.id]: track } }));
-      setNotice(t('admin.saved', { title: track.title }));
+      showToast(t('admin.saved', { title: track.title }));
     } else {
       const { track } = await uploadTrack(payload);
       setChanges(NO_CHANGES);
       reload();
-      setNotice(t('admin.uploaded', { title: track.title }));
+      showToast(t('admin.uploaded', { title: track.title }));
     }
     setForm(null);
   };
@@ -192,7 +193,7 @@ export default function AdminPage() {
     }
     const { id, title } = deleting;
     updateChanges((base) => ({ removedIds: [...base.removedIds, id] }));
-    setNotice(t('admin.deleted', { title }));
+    showToast(t('admin.deleted', { title }));
     setDeleting(null);
   };
 
@@ -203,20 +204,13 @@ export default function AdminPage() {
         <button
           type="button"
           className="btn-primary btn-primary--glow"
-          onClick={() => {
-            setNotice(null);
-            setForm({ track: null });
-          }}
+          onClick={() => setForm({ track: null })}
           aria-haspopup="dialog"
         >
           <Icon name="upload" />
           {t('admin.upload')}
         </button>
       </header>
-
-      <div aria-live="polite">
-        {notice && <p className="notice notice--success admin-notice">{notice}</p>}
-      </div>
 
       <section className="admin-panel" aria-labelledby="admin-table-title">
         <div className="admin-panel__head">
@@ -276,14 +270,8 @@ export default function AdminPage() {
                   <TrackTableRow
                     key={track.id}
                     track={track}
-                    onEdit={() => {
-                      setNotice(null);
-                      setForm({ track });
-                    }}
-                    onDelete={() => {
-                      setNotice(null);
-                      setDeleting(track);
-                    }}
+                    onEdit={() => setForm({ track })}
+                    onDelete={() => setDeleting(track)}
                   />
                 ))}
               </tbody>

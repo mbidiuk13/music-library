@@ -187,10 +187,6 @@
   box-shadow: 0 10px 30px rgba(255, 122, 89, 0.25);
 }
 
-.admin-notice {
-  margin-bottom: 20px;
-}
-
 /* ---------- Форма треку (завантаження й редагування) ---------- */
 .track-form {
   display: grid;

@@ -1,6 +1,6 @@
 /**
  * @file Точка входу клієнта: ініціалізує локалізацію і монтує React-застосунок у DOM.
- * Провайдери стану (автентифікація, плеєр) розташовані над маршрутами, тож не
+ * Провайдери стану (сповіщення, автентифікація, плеєр) розташовані над маршрутами, тож не
  * перемонтовуються під час навігації.
  */
 
@@ -12,18 +12,21 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { FavoritesProvider } from './context/FavoritesContext.jsx';
 import { PlayerProvider } from './context/PlayerContext.jsx';
+import { ToastProvider } from './context/ToastContext.jsx';
 import './styles/global.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <FavoritesProvider>
-          <PlayerProvider>
-            <App />
-          </PlayerProvider>
-        </FavoritesProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <FavoritesProvider>
+            <PlayerProvider>
+              <App />
+            </PlayerProvider>
+          </FavoritesProvider>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

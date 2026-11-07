@@ -3,15 +3,17 @@
  * @description Дія «Додати до плейлиста» (UC-4, FR-10, BPMN рис. 1.4): вікно зі списком плейлистів
  * користувача і формою «Новий плейлист». Вибір наявного плейлиста додає до нього трек
  * (`POST /api/playlists/:id/tracks`); створення нового плейлиста одразу з цим треком виконується
- * одним запитом в одній транзакції (`POST /api/playlists/with-track`). Помилки сервера
- * (трек уже в плейлисті, назва зайнята) показуються зрозумілим текстом, вікно лишається відкритим,
- * тож трек можна додати ще в кілька плейлистів.
+ * одним запитом в одній транзакції (`POST /api/playlists/with-track`). Успіх показується
+ * toast-сповіщенням і позначкою «Додано» біля плейлиста; помилки сервера (трек уже в плейлисті,
+ * назва зайнята) — зрозумілим текстом у вікні. Вікно лишається відкритим, тож трек можна додати
+ * ще в кілька плейлистів.
  */
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addTrackToPlaylist, createPlaylistWithTrack, fetchPlaylists } from '../api/playlists.js';
 import { useFavorites } from '../context/FavoritesContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import useForm from '../hooks/useForm.js';
 import useRequest from '../hooks/useRequest.js';
 import { coverGradient } from '../utils/cover.js';
@@ -102,14 +104,13 @@ function NewPlaylistForm({ onCreate, onBusyChange }) {
 export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
   const { t } = useTranslation();
   const { markFavorite } = useFavorites();
+  const { showToast } = useToast();
   const { data, error, isLoading, reload } = useRequest(fetchPlaylists);
   const [created, setCreated] = useState(/** @type {object[]} */ ([]));
   const [statuses, setStatuses] = useState(
     /** @type {Record<string, 'busy'|'added'|'exists'>} */ ({}),
   );
-  const [message, setMessage] = useState(
-    /** @type {{type: 'success'|'error', text: string}|null} */ (null),
-  );
+  const [message, setMessage] = useState(/** @type {string|null} */ (null));
   const [formKey, setFormKey] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -135,20 +136,17 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
     try {
       await addTrackToPlaylist(playlist.id, track.id);
       setStatus(playlist.id, 'added');
-      setMessage({ type: 'success', text: t('addToPlaylist.added', { title: playlist.title }) });
+      showToast(t('addToPlaylist.added', { track: track.title, title: playlist.title }));
       if (playlist.is_favorites) markFavorite(track.id, true);
       onAdded?.(playlist, { created: false });
     } catch (err) {
       if (err.code === 'TRACK_ALREADY_IN_PLAYLIST') {
         setStatus(playlist.id, 'exists');
-        setMessage({
-          type: 'error',
-          text: t('addToPlaylist.alreadyIn', { title: playlist.title }),
-        });
+        setMessage(t('addToPlaylist.alreadyIn', { title: playlist.title }));
         if (playlist.is_favorites) markFavorite(track.id, true);
       } else {
         setStatus(playlist.id, undefined);
-        setMessage({ type: 'error', text: errorMessage(err) });
+        setMessage(errorMessage(err));
       }
     }
   };
@@ -164,7 +162,7 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
     const { playlist } = await createPlaylistWithTrack(title, track.id);
     setCreated((prev) => [...prev, playlist]);
     setStatus(playlist.id, 'added');
-    setMessage({ type: 'success', text: t('addToPlaylist.created', { title: playlist.title }) });
+    showToast(t('addToPlaylist.created', { track: track.title, title: playlist.title }));
     setFormKey((key) => key + 1);
     onAdded?.(playlist, { created: true });
   };
@@ -185,8 +183,8 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
 
       <div aria-live="polite">
         {message && (
-          <p className={`notice notice--${message.type}`} role="status">
-            {message.text}
+          <p className="notice notice--error" role="alert">
+            {message}
           </p>
         )}
       </div>

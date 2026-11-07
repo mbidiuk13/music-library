@@ -14,6 +14,7 @@ import { createPlaylist, fetchPlaylists } from '../api/playlists.js';
 import Icon from '../components/Icon.jsx';
 import PlaylistTitleDialog from '../components/PlaylistTitleDialog.jsx';
 import { RequestError, TrackListSkeleton } from '../components/RequestState.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import useRequest from '../hooks/useRequest.js';
 import { coverGradient } from '../utils/cover.js';
 
@@ -82,6 +83,7 @@ export function PlaylistsIndex() {
 export default function PlaylistsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const selected = useMatch('/playlists/:id');
   const { data, error, isLoading, reload } = useRequest(fetchPlaylists);
   const [isCreating, setIsCreating] = useState(false);
@@ -105,7 +107,7 @@ export default function PlaylistsPage() {
   );
 
   /**
-   * Створює плейлист (UC-4) і відкриває його.
+   * Створює плейлист (UC-4), показує сповіщення «Плейлист створено» і відкриває його.
    * @param {string} title - назва нового плейлиста.
    * @returns {Promise<void>}
    * @throws {import('../api/client.js').ApiError} помилка сервера (показується у формі).
@@ -114,6 +116,7 @@ export default function PlaylistsPage() {
     const { playlist } = await createPlaylist(title);
     updatePlaylists((list) => [...list, playlist]);
     setIsCreating(false);
+    showToast(t('library.created', { title: playlist.title }));
     navigate(`/playlists/${playlist.id}`);
   };
 

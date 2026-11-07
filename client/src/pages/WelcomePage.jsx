@@ -29,12 +29,6 @@ function validateLogin({ email, password }) {
   };
 }
 
-/** Повідомлення, з якими на цю сторінку переходять після реєстрації чи зміни пароля. */
-const NOTICES = Object.freeze({
-  registered: 'pages.welcome.notices.registered',
-  passwordChanged: 'pages.welcome.notices.passwordChanged',
-});
-
 /**
  * Сторінка привітання з формою входу.
  * @returns {JSX.Element} сторінка.
@@ -43,7 +37,6 @@ export default function WelcomePage() {
   const { t } = useTranslation();
   const { login } = useAuth();
   const location = useLocation();
-  const noticeKey = NOTICES[location.state?.notice];
 
   const { values, isValid, handleChange, handleBlur, fieldError, setServerErrors, touchAll } =
     useForm({ email: location.state?.email ?? '', password: '' }, validateLogin);
@@ -77,12 +70,6 @@ export default function WelcomePage() {
         <h1 className="auth-page__title auth-page__title--brand">{t('app.name')}</h1>
         <p className="auth-page__subtitle">{t('pages.welcome.tagline')}</p>
       </header>
-
-      {noticeKey && (
-        <p className="notice notice--success" role="status">
-          {t(noticeKey)}
-        </p>
-      )}
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <FormField

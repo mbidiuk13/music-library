@@ -2,7 +2,8 @@
  * @module pages/RegisterPage
  * @description Сторінка реєстрації (UC-1, маршрут `/register`): пошта, ім'я, пароль і повтор
  * пароля. Поки дані некоректні, кнопка неактивна, а поле з помилкою підсвічується
- * червоним. Після успішної реєстрації — повідомлення і перехід на сторінку входу.
+ * червоним. Після успішної реєстрації — toast-сповіщення і перехід на сторінку входу
+ * (пошта вже підставлена у форму).
  */
 
 import { useState } from 'react';
@@ -11,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import FormField from '../components/FormField.jsx';
 import PasswordRules from '../components/PasswordRules.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import useForm from '../hooks/useForm.js';
 import { errorMessage } from '../utils/errors.js';
 import {
@@ -49,6 +51,7 @@ function validateRegistration(values) {
 export default function RegisterPage() {
   const { t } = useTranslation();
   const { register } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const { values, isValid, handleChange, handleBlur, fieldError, setServerErrors, touchAll } =
     useForm(INITIAL_VALUES, validateRegistration);
@@ -74,7 +77,8 @@ export default function RegisterPage() {
         password: values.password,
         passwordConfirm: values.passwordConfirm,
       });
-      navigate('/welcome', { replace: true, state: { notice: 'registered', email } });
+      showToast(t('pages.welcome.notices.registered'));
+      navigate('/welcome', { replace: true, state: { email } });
     } catch (err) {
       if (err.code === 'EMAIL_TAKEN') {
         setServerErrors([{ field: 'email', message: errorMessage(err) }]);

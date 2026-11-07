@@ -21,6 +21,7 @@ import PlaylistTitleDialog from '../components/PlaylistTitleDialog.jsx';
 import { EmptyState, RequestError, TrackListSkeleton } from '../components/RequestState.jsx';
 import TrackList from '../components/TrackList.jsx';
 import { useFavorites } from '../context/FavoritesContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import useRequest from '../hooks/useRequest.js';
 import { errorMessage } from '../utils/errors.js';
 
@@ -35,6 +36,7 @@ export default function PlaylistDetailPage() {
   /** @type {import('./PlaylistsPage.jsx').LibraryOutletContext} */
   const { updatePlaylists } = useOutletContext();
   const { markFavorite } = useFavorites();
+  const { showToast } = useToast();
 
   const load = useMemo(() => (signal) => fetchPlaylist(id, signal), [id]);
   const { data, error, isLoading, reload } = useRequest(load);
@@ -86,6 +88,7 @@ export default function PlaylistDetailPage() {
       ),
     );
     if (playlist.is_favorites) markFavorite(track.id, false);
+    showToast(t('library.trackRemoved', { title: track.title }));
   };
 
   /**
@@ -118,6 +121,7 @@ export default function PlaylistDetailPage() {
       list.map((item) => (item.id === id ? { ...item, title: renamed.title } : item)),
     );
     setDialog(null);
+    showToast(t('library.renamed', { title: renamed.title }));
   };
 
   /**
@@ -128,6 +132,7 @@ export default function PlaylistDetailPage() {
   const handleDelete = async () => {
     await deletePlaylist(id);
     updatePlaylists((list) => list.filter((item) => item.id !== id));
+    showToast(t('library.deleted', { title: playlist.title }));
     navigate('/playlists', { replace: true });
   };
 
