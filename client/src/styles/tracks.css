@@ -268,8 +268,15 @@
 }
 
 .state-message__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--text);
   font-weight: 700;
+}
+
+.state-message--error .state-message__title {
+  color: var(--danger);
 }
 
 .state-message--error {

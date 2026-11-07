@@ -5,22 +5,9 @@
  */
 
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
 import ForbiddenPage from '../pages/ForbiddenPage.jsx';
-
-/**
- * Індикатор очікування, поки відновлюється сесія за збереженим токеном.
- * @returns {JSX.Element} повідомлення «Завантаження…».
- */
-function SessionLoader() {
-  const { t } = useTranslation();
-  return (
-    <p className="page-loader" role="status">
-      {t('common.loading')}
-    </p>
-  );
-}
+import { LoadingState } from './RequestState.jsx';
 
 /**
  * Пропускає лише авторизованих; гостя перенаправляє на сторінку привітання.
@@ -29,7 +16,7 @@ function SessionLoader() {
 export function RequireAuth() {
   const { status, isAuthenticated } = useAuth();
   const location = useLocation();
-  if (status === 'loading') return <SessionLoader />;
+  if (status === 'loading') return <LoadingState />;
   if (!isAuthenticated) return <Navigate to="/welcome" replace state={{ from: location }} />;
   return <Outlet />;
 }
@@ -42,7 +29,7 @@ export function RequireAuth() {
 export function RequireAdmin() {
   const { status, isAuthenticated, isAdmin } = useAuth();
   const location = useLocation();
-  if (status === 'loading') return <SessionLoader />;
+  if (status === 'loading') return <LoadingState />;
   if (!isAuthenticated) return <Navigate to="/welcome" replace state={{ from: location }} />;
   if (!isAdmin) return <ForbiddenPage />;
   return <Outlet />;
@@ -56,7 +43,7 @@ export function RequireAdmin() {
 export function GuestOnly() {
   const { status, isAuthenticated } = useAuth();
   const location = useLocation();
-  if (status === 'loading') return <SessionLoader />;
+  if (status === 'loading') return <LoadingState />;
   if (isAuthenticated) {
     const from = location.state?.from;
     const target = from ? `${from.pathname}${from.search ?? ''}` : '/';

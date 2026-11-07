@@ -14,7 +14,6 @@ import Icon from '../components/Icon.jsx';
 import { EmptyState, RequestError, TrackListSkeleton } from '../components/RequestState.jsx';
 import TrackList from '../components/TrackList.jsx';
 import useRequest from '../hooks/useRequest.js';
-import { errorMessage } from '../utils/errors.js';
 import { genreGradient } from '../utils/genres.js';
 import { LIMITS, validateSearchQuery } from '../utils/validation.js';
 
@@ -194,11 +193,11 @@ function SearchResults({ q, genre, onClear }) {
       {tracks.length > 0 && <TrackList tracks={tracks} label={title} />}
 
       {extra.error && (
-        <p className="notice notice--error results-more" role="alert">
-          {errorMessage(extra.error)}
-        </p>
+        <div className="results-more">
+          <RequestError error={extra.error} onRetry={handleLoadMore} />
+        </div>
       )}
-      {hasMore && (
+      {hasMore && !extra.error && (
         <button
           type="button"
           className="btn-outline results-more"

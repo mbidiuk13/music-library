@@ -18,7 +18,6 @@ import { usePlayer } from '../context/PlayerContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useRequest from '../hooks/useRequest.js';
-import { errorMessage } from '../utils/errors.js';
 import { shortId } from '../utils/format.js';
 import { LIMITS } from '../utils/validation.js';
 
@@ -283,12 +282,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        {moreState.error && (
-          <p className="notice notice--error" role="alert">
-            {errorMessage(moreState.error)}
-          </p>
-        )}
-        {hasMore && (
+        {moreState.error && <RequestError error={moreState.error} onRetry={handleLoadMore} />}
+        {hasMore && !moreState.error && (
           <button
             type="button"
             className="btn-outline admin-panel__more"

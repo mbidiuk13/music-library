@@ -148,12 +148,11 @@ export default function PlaylistDetailPage() {
     return (
       <section className="library-panel">
         {error.status === 404 || error.status === 400 ? (
-          <div className="state-message" role="status">
-            <p className="state-message__title">{t('library.notFound')}</p>
+          <EmptyState title={t('library.notFound')}>
             <Link to="/playlists" className="btn-secondary">
               {t('library.backToPlaylists')}
             </Link>
-          </div>
+          </EmptyState>
         ) : (
           <RequestError error={error} onRetry={reload} />
         )}

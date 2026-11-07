@@ -1,7 +1,8 @@
 /**
  * @module context/AuthContext
  * @description Стан автентифікації клієнта: поточний користувач, вхід, реєстрація, вихід (UC-8)
- * і відновлення сесії після перезавантаження сторінки через `GET /api/auth/me`.
+ * і відновлення сесії після перезавантаження сторінки через `GET /api/auth/me`. Якщо сервер
+ * недоступний, сесія не скидається: стан 'error' і повтор запиту кнопкою «Спробувати ще раз».
  * Токен зберігається в localStorage (див. api/client.js).
  */
 
@@ -21,7 +22,10 @@ import { getToken, setToken, setUnauthorizedHandler } from '../api/client.js';
 /**
  * @typedef {object} AuthContextValue
  * @property {AuthUser|null} user - поточний користувач або null для гостя.
- * @property {'loading'|'ready'} status - 'loading', поки відновлюється сесія за збереженим токеном.
+ * @property {'loading'|'ready'|'error'} status - 'loading', поки відновлюється сесія за збереженим
+ *   токеном; 'error' — відновити сесію не вдалося (напр. немає зв'язку із сервером).
+ * @property {unknown} sessionError - помилка відновлення сесії (для стану 'error').
+ * @property {() => void} retrySession - повторити відновлення сесії.
  * @property {boolean} isAuthenticated - чи увійшов користувач.
  * @property {boolean} isAdmin - чи має користувач роль адміністратора.
  * @property {(credentials: {email: string, password: string}) => Promise<AuthUser>} login - вхід.
@@ -40,6 +44,9 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [status, setStatus] = useState(() => (getToken() ? 'loading' : 'ready'));
+  const [sessionError, setSessionError] = useState(/** @type {unknown} */ (null));
+  /** Номер спроби відновлення сесії (кнопка «Спробувати ще раз» запускає нову). */
+  const [sessionAttempt, setSessionAttempt] = useState(0);
 
   /**
    * Завершує сесію локально: JWT stateless, тож достатньо забути токен (UC-8).
@@ -56,18 +63,34 @@ export function AuthProvider({ children }) {
     const controller = new AbortController();
     authApi
       .fetchMe(controller.signal)
-      .then(({ user: me }) => setUser(me))
+      .then(({ user: me }) => {
+        setUser(me);
+        setStatus('ready');
+      })
       .catch((err) => {
         if (err.name === 'AbortError') return;
-        // 401 — токен прострочений або недійсний; інші помилки (сервер недоступний) —
-        // токен не видаляємо, щоб сесія відновилась під час наступного завантаження.
-        if (err.status === 401) clearSession();
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setStatus('ready');
+        // 401 — токен прострочений або недійсний: продовжуємо як гість. Інші помилки (сервер
+        // недоступний) — токен не видаляємо, а пропонуємо повторити спробу.
+        if (err.status === 401) {
+          clearSession();
+          setStatus('ready');
+        } else {
+          setSessionError(err);
+          setStatus('error');
+        }
       });
     return () => controller.abort();
-  }, [clearSession]);
+  }, [clearSession, sessionAttempt]);
+
+  /**
+   * Повторює відновлення сесії після помилки (кнопка «Спробувати ще раз»).
+   * @returns {void}
+   */
+  const retrySession = useCallback(() => {
+    setSessionError(null);
+    setStatus('loading');
+    setSessionAttempt((value) => value + 1);
+  }, []);
 
   // Якщо будь-який запит отримав 401 на збережений токен — сесія закінчилась.
   useEffect(() => {
@@ -120,13 +143,15 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       status,
+      sessionError,
+      retrySession,
       isAuthenticated: Boolean(user),
       isAdmin: user?.role === 'admin',
       login,
       register,
       logout,
     }),
-    [user, status, login, register, logout],
+    [user, status, sessionError, retrySession, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

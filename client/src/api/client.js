@@ -70,7 +70,7 @@ export function setUnauthorizedHandler(handler) {
  * @param {object|FormData} [options.body] - тіло: об'єкт надсилається як JSON, FormData — як multipart.
  * @param {AbortSignal} [options.signal] - сигнал для скасування запиту.
  * @returns {Promise<any>} розібране тіло відповіді (null для 204).
- * @throws {ApiError} якщо сервер повернув помилку або мережа недоступна.
+ * @throws {ApiError} якщо сервер повернув помилку або мережа чи сервер недоступні (`NETWORK_ERROR`).
  */
 export async function request(path, { method = 'GET', body, signal } = {}) {
   const headers = { Accept: 'application/json' };
@@ -96,6 +96,11 @@ export async function request(path, { method = 'GET', body, signal } = {}) {
   if (response.status === 204) return null;
 
   const data = await response.json().catch(() => null);
+  // Сервер API завжди відповідає JSON. Помилка 5xx без JSON-тіла означає, що запит не дійшов
+  // до сервера (проксі Vite чи nginx не може з'єднатися з ним) — для користувача це «немає зв'язку».
+  if (!response.ok && data === null && response.status >= 500) {
+    throw new ApiError(response.status, 'NETWORK_ERROR', '');
+  }
   if (!response.ok) {
     if (response.status === 401 && token && unauthorizedHandler) unauthorizedHandler();
     const error = data?.error ?? {};
