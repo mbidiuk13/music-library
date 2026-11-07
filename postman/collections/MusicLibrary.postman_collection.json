@@ -1,0 +1,1273 @@
+{
+  "info": {
+    "name": "MusicLibrary API",
+    "description": "REST API веб-застосунку «Бібліотека музичних творів» (MusicLibrary).\n\nЯк користуватися:\n1. Запустіть сервер (`npm run dev`), за потреби змініть `{{baseUrl}}`.\n2. Виконайте «Auth Controller → Реєстрація» (один раз) або «Вхід» — JWT автоматично зберігається у змінну `{{token}}` і підставляється в заголовок `Authorization: Bearer` усіх запитів.\n3. «Recommendation Engine → Популярне» або «Media Service → Пошук» зберігає `{{trackId}}` для запитів, яким потрібен трек.\n4. Для папки «Адміністратор» впишіть `{{adminPassword}}` (значення ADMIN_PASSWORD з `.env`) і виконайте «Вхід адміністратора».\n\nКолекцію можна запустити повністю через Collection Runner (крім «Скидання пароля» і «Завантажити аудіо», які потребують ручних даних).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Перевірка працездатності",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "auth": {
+          "type": "noauth"
+        },
+        "description": "Відповідь `{ \"status\": \"ok\" }` означає, що сервер запущено."
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth Controller",
+      "description": "Реєстрація, вхід, поточний користувач, відновлення пароля (`/api/auth`).",
+      "item": [
+        {
+          "name": "Реєстрація",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"username\": \"Студентка\",\n  \"password\": \"{{userPassword}}\",\n  \"passwordConfirm\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "UC-1. Створює користувача і його плейлист «Улюблені» в одній транзакції. Повертає JWT — він зберігається в `{{token}}`. Повторний запит з тим самим email → 409 (тоді просто виконайте «Вхід»)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201 (або 409, якщо користувач уже є)', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('token', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Реєстрація — слабкий пароль (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"weak@example.com\",\n  \"username\": \"Тест\",\n  \"password\": \"onlyletters\",\n  \"passwordConfirm\": \"onlyletters\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "FR-2: пароль без цифри і спецсимвола відхиляється з кодом VALIDATION_ERROR."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  "pm.test('код VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Вхід",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "UC-2. Після успішного входу токен автоматично зберігається у змінну колекції `{{token}}`, і всі наступні запити йдуть з заголовком `Authorization: Bearer {{token}}`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('у відповіді є JWT', () => pm.expect(body.token).to.be.a('string'));",
+                  "if (body.token) pm.collectionVariables.set('token', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Вхід — невірний пароль (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"Wrong-pass-123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Повідомлення однакове для неіснуючого email і хибного пароля."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 401', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Поточний користувач",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Дані користувача за токеном (відновлення сесії після перезавантаження сторінки)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Поточний користувач — без токена (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 401', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Забули пароль",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Завжди 200 (не розкриває, чи існує email). Без SMTP посилання з токеном друкується в консоль сервера — скопіюйте `token` з нього у змінну `{{resetToken}}`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Скидання пароля",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"password\": \"N3w-Passw0rd!\",\n  \"passwordConfirm\": \"N3w-Passw0rd!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Токен дійсний 15 хв і одноразовий. Після зміни пароля оновіть змінну `{{userPassword}}`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Media Service",
+      "description": "Пошук, метадані, посилання для відтворення, облік прослуховувань (`/api/tracks`, `/api/meta`).",
+      "item": [
+        {
+          "name": "Пошук за назвою / виконавцем / жанром",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracks/search?q=inna&limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tracks", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "inna"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Підрядковий пошук (ILIKE) за назвою, виконавцем або жанром, сортування за кількістю відтворень. Перший знайдений трек зберігається в `{{trackId}}`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const tracks = pm.response.json().tracks || [];",
+                  "pm.test('список треків не порожній', () => pm.expect(tracks.length).to.be.above(0));",
+                  "if (tracks.length) pm.collectionVariables.set('trackId', tracks[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Пошук за жанром",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracks/search?genre=Поп",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tracks", "search"],
+              "query": [
+                {
+                  "key": "genre",
+                  "value": "Поп"
+                }
+              ]
+            },
+            "description": "Точний фільтр за жанром зі словника (плитки жанрів на сторінці пошуку)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Пошук — порожній запит (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracks/search?q=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tracks", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Метадані треку",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracks/{{trackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tracks", "{{trackId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Посилання для відтворення (pre-signed URL)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracks/{{trackId}}/stream",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tracks", "{{trackId}}", "stream"]
+            },
+            "description": "Повертає `{url, expiresIn}` — тимчасове посилання на приватний об'єкт S3 (60 хв)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('є url', () => pm.expect(pm.response.json().url).to.match(/^https:\\/\\//));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Облік відтворення",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracks/{{trackId}}/play",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tracks", "{{trackId}}", "play"]
+            },
+            "description": "В одній транзакції: `play_count + 1` і (для авторизованого користувача) запис в історію прослуховувань."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Словники метаданих",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/meta/vocabularies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "meta", "vocabularies"]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Жанри, настрої і тональності для форм адмін-панелі."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Recommendation Engine",
+      "description": "Популярне (Топ-100) і персональні рекомендації на основі косинусної подібності.",
+      "item": [
+        {
+          "name": "Популярне — Топ-100",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/recommendations/popular",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "recommendations", "popular"]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Топ-100 за кількістю відтворень. Перший трек зберігається в `{{trackId}}`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const tracks = pm.response.json().tracks || [];",
+                  "pm.test('список треків не порожній', () => pm.expect(tracks.length).to.be.above(0));",
+                  "if (tracks.length) pm.collectionVariables.set('trackId', tracks[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Персональні рекомендації",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/recommendations/personal",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "recommendations", "personal"]
+            },
+            "description": "`source: \"popular\"`, якщо прослухано менше ніж 5 унікальних треків (REC_MIN_HISTORY), інакше `source: \"personal\"` — 20 треків з полем `similarity`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Playlist Service",
+      "description": "Плейлисти поточного користувача і «Улюблені». Усі запити — з `{{token}}`; чужий плейлист → 404.",
+      "item": [
+        {
+          "name": "Мої плейлисти",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists"]
+            },
+            "description": "«Улюблені» — першим, у кожного плейлиста — кількість треків."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Створити плейлист",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Для пробіжки\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Назва 1–100 символів; дубль назви → 409. `id` зберігається в `{{playlistId}}`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('playlistId', pm.response.json().playlist.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Створити плейлист — дубль назви (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Для пробіжки\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 409', () => pm.response.to.have.status(409));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Створити плейлист і додати трек",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists/with-track",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists", "with-track"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Нове з треком\",\n  \"trackId\": \"{{trackId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "BPMN рис. 1.4: створення і додавання в одній транзакції (збій → ROLLBACK)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Плейлист з треками",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists/{{playlistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists", "{{playlistId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Перейменувати плейлист",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists/{{playlistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists", "{{playlistId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ранкова пробіжка\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "UC-11. «Улюблені» перейменувати не можна."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Додати трек до плейлиста",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists", "{{playlistId}}", "tracks"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackId\": \"{{trackId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Повторне додавання того самого треку → 409."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Вилучити трек з плейлиста",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists/{{playlistId}}/tracks/{{trackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists", "{{playlistId}}", "tracks", "{{trackId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Видалити плейлист",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/playlists/{{playlistId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "playlists", "{{playlistId}}"]
+            },
+            "description": "UC-11. «Улюблені» видалити не можна."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Улюблені — id треків",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/ids",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", "ids"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Улюблені — додати трек",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/{{trackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", "{{trackId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Улюблені — прибрати трек",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/{{trackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", "{{trackId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Адміністратор",
+      "description": "Модерація медіатеки (`/api/admin/tracks`, лише роль admin). Спочатку виконайте «Вхід адміністратора» — токен зберігається в `{{adminToken}}`.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Вхід адміністратора",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Облікові дані — ADMIN_EMAIL і ADMIN_PASSWORD з `.env` (створюється командою `npm run seed:admin`)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "const body = pm.response.json();",
+                  "pm.test('у відповіді є JWT', () => pm.expect(body.token).to.be.a('string'));",
+                  "if (body.token) pm.collectionVariables.set('adminToken', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Адмін-панель — звичайний користувач (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tracks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tracks"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "RBAC: користувач з роллю user отримує 403."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 403', () => pm.response.to.have.status(403));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Список треків",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tracks?q=&limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tracks"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Пошук за ID або назвою; без `q` — усі треки."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Завантажити аудіо",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tracks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tracks"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "title",
+                  "value": "Тестовий трек",
+                  "type": "text"
+                },
+                {
+                  "key": "artist",
+                  "value": "Тестовий виконавець",
+                  "type": "text"
+                },
+                {
+                  "key": "genre",
+                  "value": "Поп",
+                  "type": "text"
+                },
+                {
+                  "key": "bpm",
+                  "value": "120",
+                  "type": "text"
+                },
+                {
+                  "key": "key_signature",
+                  "value": "A minor",
+                  "type": "text"
+                },
+                {
+                  "key": "mood",
+                  "value": "енергійний",
+                  "type": "text"
+                },
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "type": "text"
+                }
+              ]
+            },
+            "description": "UC-9. `multipart/form-data`: файл .mp3/.wav (≤ MAX_UPLOAD_MB) у полі `file` + 7 полів метаданих. Оберіть файл у полі `file` перед надсиланням. `id` нового треку зберігається в `{{adminTrackId}}`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('adminTrackId', pm.response.json().track.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Редагувати метадані",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tracks/{{adminTrackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tracks", "{{adminTrackId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Тестовий трек\",\n  \"artist\": \"Тестовий виконавець\",\n  \"genre\": \"Поп\",\n  \"bpm\": 128,\n  \"key_signature\": \"A minor\",\n  \"mood\": \"радісний\",\n  \"year\": 2024\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "UC-6. Зміни одразу враховуються пошуком і рекомендаціями."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Видалити трек",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tracks/{{adminTrackId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tracks", "{{adminTrackId}}"]
+            },
+            "description": "Видаляє запис (каскадно — з плейлистів та історії) і об'єкт з S3."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "userEmail",
+      "value": "student@example.com"
+    },
+    {
+      "key": "userPassword",
+      "value": "Passw0rd!2026"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@musiclibrary.local"
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "trackId",
+      "value": ""
+    },
+    {
+      "key": "playlistId",
+      "value": ""
+    },
+    {
+      "key": "adminTrackId",
+      "value": ""
+    },
+    {
+      "key": "resetToken",
+      "value": ""
+    }
+  ]
+}
