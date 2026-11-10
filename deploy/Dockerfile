@@ -19,7 +19,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY client/package.json client/
 COPY server/package.json server/
-RUN npm ci --workspace client --no-audit --no-fund
+# --ignore-scripts: скрипти встановлення залежностей не виконуються (жодна з клієнтських їх не потребує).
+RUN npm ci --workspace client --ignore-scripts --no-audit --no-fund
 
 COPY client/ client/
 RUN npm run build --workspace client
@@ -33,7 +34,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY client/package.json client/
 COPY server/package.json server/
-RUN npm ci --workspace server --omit=dev --no-audit --no-fund \
+# --ignore-scripts: скрипти встановлення не виконуються; явно перезбирається лише bcrypt —
+# нативний модуль, якому потрібен його скрипт install (node-gyp-build).
+RUN npm ci --workspace server --omit=dev --ignore-scripts --no-audit --no-fund \
+    && npm rebuild bcrypt \
     && npm cache clean --force
 
 COPY database/ database/
