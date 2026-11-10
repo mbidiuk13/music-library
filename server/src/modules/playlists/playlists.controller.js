@@ -8,12 +8,14 @@ import * as playlistService from './playlists.service.js';
 
 /**
  * GET /api/playlists — плейлисти поточного користувача.
- * @param {import('express').Request} req - HTTP-запит авторизованого користувача.
- * @param {import('express').Response} res - 200 `{playlists}`.
+ * @param {import('express').Request} req - HTTP-запит авторизованого користувача;
+ *   query: необов'язковий `trackId`.
+ * @param {import('express').Response} res - 200 `{playlists}`; з `trackId` кожен плейлист
+ *   містить `hasTrack`.
  * @returns {Promise<void>}
  */
 export async function listPlaylists(req, res) {
-  res.json({ playlists: await playlistService.listPlaylists(req.user.id) });
+  res.json({ playlists: await playlistService.listPlaylists(req.user.id, req.query.trackId) });
 }
 
 /**

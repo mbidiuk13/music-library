@@ -7,7 +7,7 @@
  */
 
 import { Router } from 'express';
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
 import { authenticate } from '../../middleware/auth.js';
 import validate from '../../middleware/validate.js';
 import asyncHandler from '../../utils/asyncHandler.js';
@@ -53,16 +53,29 @@ const trackIdBodyRule = () =>
 /** Правило для ідентифікатора треку в шляху запиту. */
 const trackIdParamRule = param('trackId').isUUID().withMessage(TRACK_ID_MESSAGE);
 
+/**
+ * Правило для необов'язкового ідентифікатора треку в рядку запиту (`?trackId=`): лише один
+ * рядок-UUID (повторений параметр, тобто масив, відхиляється).
+ */
+const trackIdQueryRule = query('trackId')
+  .optional()
+  .custom((value) => typeof value === 'string')
+  .withMessage(TRACK_ID_MESSAGE)
+  .bail()
+  .isUUID()
+  .withMessage(TRACK_ID_MESSAGE);
+
 /** Маршрути плейлистів: `/api/playlists`. */
 export const playlistRouter = Router();
 
 playlistRouter.use(authenticate);
 
 /**
- * Плейлисти поточного користувача з кількістю треків.
+ * Плейлисти поточного користувача з кількістю треків. З `?trackId=` кожен плейлист містить
+ * ознаку `hasTrack` — чи є в ньому цей трек (вікно «Додати до плейлиста»).
  * @route GET /api/playlists
  */
-playlistRouter.get('/', asyncHandler(controller.listPlaylists));
+playlistRouter.get('/', trackIdQueryRule, validate, asyncHandler(controller.listPlaylists));
 
 /**
  * Створення плейлиста (UC-4).

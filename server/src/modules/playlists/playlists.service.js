@@ -99,11 +99,14 @@ async function requireOwnPlaylist(userId, id) {
 
 /**
  * Повертає плейлисти користувача з кількістю треків; «Улюблені» — першим.
+ * Якщо передано trackId, кожен плейлист містить ознаку `hasTrack` (чи вже є в ньому цей трек):
+ * за нею вікно «Додати до плейлиста» одразу показує «Уже є».
  * @param {string} userId - UUID користувача.
+ * @param {string} [trackId] - UUID треку для перевірки наявності в плейлистах.
  * @returns {Promise<object[]>} плейлисти.
  */
-export async function listPlaylists(userId) {
-  const playlists = await repository.listPlaylists(userId, config.favoritesTitle);
+export async function listPlaylists(userId, trackId) {
+  const playlists = await repository.listPlaylists(userId, config.favoritesTitle, trackId);
   return playlists.map(toPlaylist);
 }
 

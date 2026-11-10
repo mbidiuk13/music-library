@@ -18,19 +18,33 @@ const PLAYLIST_COLUMNS = 'p.id, p.title, p.created_at, COUNT(pt.track_id)::int A
 /**
  * Повертає плейлисти користувача з кількістю треків в кожному.
  * Системний плейлист (з назвою favoritesTitle) — першим, решта — в порядку створення.
+ * Якщо передано trackId, кожен плейлист отримує ознаку `hasTrack` — чи є в ньому цей трек;
+ * вона обчислюється в тому самому запиті підзапитом EXISTS до playlist_track, а не окремим
+ * запитом на кожен плейлист.
  * @param {string} userId - UUID власника.
  * @param {string} favoritesTitle - назва плейлиста «Улюблені».
- * @returns {Promise<Array<{id: string, title: string, created_at: Date, track_count: number}>>} плейлисти.
+ * @param {string} [trackId] - UUID треку, наявність якого в плейлистах треба перевірити.
+ * @returns {Promise<Array<{id: string, title: string, created_at: Date, track_count: number,
+ *   hasTrack?: boolean}>>} плейлисти (поле `hasTrack` — лише якщо передано trackId).
  */
-export async function listPlaylists(userId, favoritesTitle) {
+export async function listPlaylists(userId, favoritesTitle, trackId) {
+  const params = [userId, favoritesTitle];
+  let hasTrackColumn = '';
+  if (trackId) {
+    params.push(trackId);
+    hasTrackColumn = `,
+       EXISTS (
+         SELECT 1 FROM playlist_track m WHERE m.playlist_id = p.id AND m.track_id = $3
+       ) AS "hasTrack"`;
+  }
   const { rows } = await query(
-    `SELECT ${PLAYLIST_COLUMNS}
+    `SELECT ${PLAYLIST_COLUMNS}${hasTrackColumn}
      FROM playlist p
      LEFT JOIN playlist_track pt ON pt.playlist_id = p.id
      WHERE p.user_id = $1
      GROUP BY p.id
      ORDER BY p.title = $2 DESC, p.created_at, p.title`,
-    [userId, favoritesTitle],
+    params,
   );
   return rows;
 }
