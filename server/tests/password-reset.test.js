@@ -1,6 +1,7 @@
 /**
- * @file Інтеграційні тести відновлення пароля: POST /api/auth/forgot-password
- * і POST /api/auth/reset-password. Надсилання листів підмінено, тому SMTP не потрібен.
+ * @file Інтеграційні тести відновлення пароля: POST /api/auth/forgot-password,
+ * POST /api/auth/reset-password/verify і POST /api/auth/reset-password.
+ * Надсилання листів підмінено, тому SMTP не потрібен.
  */
 
 import { jest } from '@jest/globals';
@@ -56,6 +57,29 @@ function resetPassword(token, password = NEW_PASSWORD) {
   return request(app)
     .post('/api/auth/reset-password')
     .send({ token, password, passwordConfirm: password });
+}
+
+/**
+ * Надсилає запит на перевірку посилання для відновлення пароля.
+ * @param {object} body - тіло запиту (зазвичай `{token}`).
+ * @returns {import('supertest').Test} запит supertest.
+ */
+function verifyToken(body) {
+  return request(app).post('/api/auth/reset-password/verify').send(body);
+}
+
+/**
+ * Створює прострочений токен відновлення для користувача (підписаний як справжній).
+ * @param {string} userId - UUID користувача.
+ * @returns {Promise<string>} прострочений токен.
+ */
+async function expiredResetToken(userId) {
+  const { rows } = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+  return jwt.sign(
+    { sub: userId, purpose: 'reset' },
+    process.env.JWT_SECRET + rows[0].password_hash,
+    { expiresIn: -10 },
+  );
 }
 
 /**
@@ -116,6 +140,74 @@ describeDb('POST /api/auth/forgot-password', () => {
   });
 });
 
+describeDb('POST /api/auth/reset-password/verify', () => {
+  test('204: дійсний токен; дані не змінюються, токен лишається придатним', async () => {
+    const user = await registerUser();
+    const token = await requestResetToken(user.email);
+    const before = await query('SELECT password_hash FROM users WHERE id = $1', [user.id]);
+
+    const res = await verifyToken({ token });
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+    const after = await query('SELECT password_hash FROM users WHERE id = $1', [user.id]);
+    expect(after.rows[0].password_hash).toBe(before.rows[0].password_hash);
+    await resetPassword(token).expect(200);
+  });
+
+  test('400: токен уже використано для зміни пароля', async () => {
+    const user = await registerUser();
+    const token = await requestResetToken(user.email);
+    await resetPassword(token).expect(200);
+
+    const res = await verifyToken({ token });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toEqual({ code: 'INVALID_RESET_TOKEN', message: INVALID_LINK });
+  });
+
+  test('400: прострочений токен', async () => {
+    const user = await registerUser();
+    const res = await verifyToken({ token: await expiredResetToken(user.id) });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_RESET_TOKEN');
+  });
+
+  test.each([
+    ['пошкоджений рядок', () => 'not.a.jwt'],
+    ['sub не є UUID', () => jwt.sign({ sub: 'abc', purpose: 'reset' }, 'x')],
+    [
+      'користувача не існує',
+      () =>
+        jwt.sign(
+          { sub: '00000000-0000-4000-8000-000000000000', purpose: 'reset' },
+          process.env.JWT_SECRET,
+        ),
+    ],
+  ])('400: %s', async (_, makeToken) => {
+    const res = await verifyToken({ token: makeToken() });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_RESET_TOKEN');
+  });
+
+  test.each([
+    ['токена немає', {}],
+    ['порожній токен', { token: '' }],
+    ['токен не рядок', { token: 123 }],
+  ])('400: %s — помилка валідації поля token', async (_, body) => {
+    const res = await verifyToken(body);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.details).toContainEqual({
+      field: 'token',
+      message: 'Посилання для відновлення пароля недійсне',
+    });
+  });
+});
+
 describeDb('POST /api/auth/reset-password', () => {
   test('200: змінює пароль — новий працює, старий ні', async () => {
     const user = await registerUser();
@@ -141,12 +233,7 @@ describeDb('POST /api/auth/reset-password', () => {
 
   test('прострочений токен → 400', async () => {
     const user = await registerUser();
-    const { rows } = await query('SELECT password_hash FROM users WHERE id = $1', [user.id]);
-    const expired = jwt.sign(
-      { sub: user.id, purpose: 'reset' },
-      process.env.JWT_SECRET + rows[0].password_hash,
-      { expiresIn: -10 },
-    );
+    const expired = await expiredResetToken(user.id);
 
     const res = await resetPassword(expired);
     expect(res.status).toBe(400);

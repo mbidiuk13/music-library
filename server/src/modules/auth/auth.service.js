@@ -141,13 +141,15 @@ export async function requestPasswordReset(email) {
 }
 
 /**
- * Встановлює новий пароль за токеном із листа. Токен одноразовий: після зміни пароля
- * змінюється хеш, яким він підписаний.
- * @param {{token: string, password: string}} data - токен і новий (перевірений) пароль.
- * @returns {Promise<void>}
- * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен недійсний, прострочений або вже використаний.
+ * Знаходить користувача, якому належить токен відновлення пароля, і перевіряє токен:
+ * формат, ідентифікатор користувача, підпис (секрет + поточний хеш пароля) і строк дії.
+ * Дані в БД не змінює.
+ * @param {string} token - токен із посилання в листі.
+ * @returns {Promise<object>} рядок таблиці users власника токена.
+ * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен пошкоджений, прострочений, належить
+ *   неіснуючому користувачу або вже використаний.
  */
-export async function resetPassword({ token, password }) {
+async function findResetTokenOwner(token) {
   const userId = readTokenSubject(token);
   if (!userId || !UUID_PATTERN.test(userId)) throw invalidResetToken();
 
@@ -158,6 +160,28 @@ export async function resetPassword({ token, password }) {
   } catch {
     throw invalidResetToken();
   }
+  return user;
+}
+
+/**
+ * Перевіряє посилання для відновлення пароля ще до показу форми (сторінка `/reset-password`).
+ * @param {string} token - токен із посилання в листі.
+ * @returns {Promise<void>}
+ * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен недійсний, прострочений або вже використаний.
+ */
+export async function verifyResetToken(token) {
+  await findResetTokenOwner(token);
+}
+
+/**
+ * Встановлює новий пароль за токеном із листа. Токен одноразовий: після зміни пароля
+ * змінюється хеш, яким він підписаний.
+ * @param {{token: string, password: string}} data - токен і новий (перевірений) пароль.
+ * @returns {Promise<void>}
+ * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен недійсний, прострочений або вже використаний.
+ */
+export async function resetPassword({ token, password }) {
+  const user = await findResetTokenOwner(token);
 
   const newHash = await bcrypt.hash(password, config.bcryptSaltRounds);
   const changed = await repository.updatePasswordHash(user.id, user.password_hash, newHash);

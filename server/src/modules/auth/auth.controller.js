@@ -55,6 +55,18 @@ export async function forgotPassword(req, res) {
 }
 
 /**
+ * POST /api/auth/reset-password/verify — перевірка посилання для відновлення пароля
+ * до показу форми. Дані не змінює.
+ * @param {import('express').Request} req - тіло: `{token}`.
+ * @param {import('express').Response} res - 204 без тіла, якщо посилання дійсне.
+ * @returns {Promise<void>}
+ */
+export async function verifyResetToken(req, res) {
+  await authService.verifyResetToken(req.body.token);
+  res.status(204).end();
+}
+
+/**
  * POST /api/auth/reset-password — встановлення нового пароля за посиланням з листа.
  * @param {import('express').Request} req - тіло: `{token, password, passwordConfirm}`.
  * @param {import('express').Response} res - 200 `{message}`.

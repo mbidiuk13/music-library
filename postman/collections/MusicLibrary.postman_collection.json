@@ -306,6 +306,46 @@
           ]
         },
         {
+          "name": "Перевірка посилання для скидання пароля",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password", "verify"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Перевіряє токен без змін у БД: 204 — посилання дійсне; 400 `INVALID_RESET_TOKEN` — пошкоджений, прострочений або вже використаний токен. Клієнт викликає цей запит при відкритті сторінки `/reset-password`."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        },
+        {
           "name": "Скидання пароля",
           "request": {
             "method": "POST",

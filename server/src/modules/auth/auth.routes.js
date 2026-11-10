@@ -58,6 +58,18 @@ const passwordConfirmRule = () =>
     .custom((value, { req }) => value === req.body.password)
     .withMessage('Паролі не збігаються');
 
+/**
+ * Правило для токена відновлення пароля: непорожній рядок (сам токен перевіряє auth.service).
+ * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
+ */
+const resetTokenRule = () =>
+  body('token')
+    .isString()
+    .withMessage('Посилання для відновлення пароля недійсне')
+    .bail()
+    .notEmpty()
+    .withMessage('Посилання для відновлення пароля недійсне');
+
 const router = Router();
 
 /**
@@ -114,17 +126,23 @@ router.post(
 router.post('/forgot-password', emailRule(), validate, asyncHandler(controller.forgotPassword));
 
 /**
+ * Перевірка посилання для відновлення пароля перед показом форми (без змін у БД).
+ * @route POST /api/auth/reset-password/verify
+ */
+router.post(
+  '/reset-password/verify',
+  resetTokenRule(),
+  validate,
+  asyncHandler(controller.verifyResetToken),
+);
+
+/**
  * Встановлення нового пароля за токеном із листа.
  * @route POST /api/auth/reset-password
  */
 router.post(
   '/reset-password',
-  body('token')
-    .isString()
-    .withMessage('Посилання для відновлення пароля недійсне')
-    .bail()
-    .notEmpty()
-    .withMessage('Посилання для відновлення пароля недійсне'),
+  resetTokenRule(),
   newPasswordRule('password'),
   passwordConfirmRule(),
   validate,
