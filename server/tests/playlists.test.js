@@ -78,6 +78,95 @@ describeDb('GET /api/playlists', () => {
   });
 });
 
+describeDb('GET /api/playlists?trackId=', () => {
+  /**
+   * Додає трек до плейлиста прямо в БД.
+   * @param {string} playlistId - UUID плейлиста.
+   * @param {string} trackId - UUID треку.
+   * @returns {Promise<void>}
+   */
+  async function linkTrack(playlistId, trackId) {
+    await query('INSERT INTO playlist_track (playlist_id, track_id) VALUES ($1, $2)', [
+      playlistId,
+      trackId,
+    ]);
+  }
+
+  test('hasTrack: true для плейлистів з треком, false для решти', async () => {
+    const user = await createUser();
+    const track = await insertTestTrack();
+    const otherTrack = await insertTestTrack();
+    const withTrack = await createPlaylist(user, 'З треком');
+    const withoutTrack = await createPlaylist(user, 'Без треку');
+    await linkTrack(user.favoritesId, track.id);
+    await linkTrack(withTrack.id, track.id);
+    await linkTrack(withoutTrack.id, otherTrack.id);
+
+    const res = await request(app)
+      .get('/api/playlists')
+      .query({ trackId: track.id })
+      .set('Authorization', user.auth);
+
+    expect(res.status).toBe(200);
+    expect(res.body.playlists.map((p) => [p.title, p.hasTrack])).toEqual([
+      ['Улюблені', true],
+      ['З треком', true],
+      ['Без треку', false],
+    ]);
+    expect(res.body.playlists.map((p) => p.track_count)).toEqual([1, 1, 1]);
+  });
+
+  test('без trackId поля hasTrack немає', async () => {
+    const user = await createUser();
+    const track = await insertTestTrack();
+    await linkTrack(user.favoritesId, track.id);
+
+    const res = await request(app).get('/api/playlists').set('Authorization', user.auth);
+
+    expect(res.status).toBe(200);
+    expect(res.body.playlists).toHaveLength(1);
+    expect(res.body.playlists[0]).not.toHaveProperty('hasTrack');
+  });
+
+  test.each([
+    ['не UUID', 'abc'],
+    ['порожній рядок', ''],
+    ['повторений параметр', [UNKNOWN_ID, UNKNOWN_ID]],
+  ])('400: trackId — %s', async (name, trackId) => {
+    const user = await createUser();
+
+    const res = await request(app)
+      .get('/api/playlists')
+      .query({ trackId })
+      .set('Authorization', user.auth);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.details).toEqual([
+      { field: 'trackId', message: 'Некоректний ідентифікатор треку' },
+    ]);
+  });
+
+  test('чужі плейлисти з цим треком не потрапляють у відповідь', async () => {
+    const user = await createUser();
+    const other = await createUser();
+    const track = await insertTestTrack();
+    const own = await createPlaylist(user, 'Мій');
+    const foreign = await createPlaylist(other, 'Чужий з треком');
+    await linkTrack(foreign.id, track.id);
+    await linkTrack(other.favoritesId, track.id);
+
+    const res = await request(app)
+      .get('/api/playlists')
+      .query({ trackId: track.id })
+      .set('Authorization', user.auth);
+
+    expect(res.status).toBe(200);
+    expect(res.body.playlists.map((p) => p.id)).toEqual([user.favoritesId, own.id]);
+    expect(res.body.playlists.map((p) => p.hasTrack)).toEqual([false, false]);
+  });
+});
+
 describeDb('POST /api/playlists', () => {
   test('201: створює плейлист, назва обрізається', async () => {
     const user = await createUser();
