@@ -60,6 +60,10 @@ const oneOf = (field, values, message) =>
  * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
  */
 const integerInRange = (field, getRange, formatMessage) => {
+  /**
+   * Текст помилки з актуальними межами діапазону (обчислюється під час кожної перевірки).
+   * @returns {string} повідомлення про помилку.
+   */
   const message = () => formatMessage(getRange());
   return body(field)
     .not()
