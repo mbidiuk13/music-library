@@ -19,7 +19,8 @@ export function preferenceVector(vectors) {
   if (vectors.length === 0) {
     throw new Error('Для вектора уподобань потрібен хоча б один прослуханий трек');
   }
-  const sum = vectors.reduce((acc, vector) => add(acc, vector));
+  const [first, ...rest] = vectors;
+  const sum = rest.reduce((acc, vector) => add(acc, vector), first);
   return divide(sum, vectors.length);
 }
 
