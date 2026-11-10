@@ -43,6 +43,17 @@ export function forgotPassword(email) {
 }
 
 /**
+ * Перевірка посилання для відновлення пароля перед показом форми (дані не змінюються).
+ * @param {string} token - токен з посилання в листі.
+ * @param {AbortSignal} [signal] - сигнал для скасування запиту.
+ * @returns {Promise<null>} null, якщо посилання дійсне (відповідь 204).
+ * @throws {import('./client.js').ApiError} INVALID_RESET_TOKEN, якщо посилання недійсне.
+ */
+export function verifyResetToken(token, signal) {
+  return request('/auth/reset-password/verify', { method: 'POST', body: { token }, signal });
+}
+
+/**
  * Встановлення нового пароля за токеном з листа.
  * @param {{token: string, password: string, passwordConfirm: string}} data - токен і новий пароль.
  * @returns {Promise<{message: string}>} повідомлення сервера.

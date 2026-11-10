@@ -1,19 +1,22 @@
 /**
  * @module pages/ResetPasswordPage
  * @description Встановлення нового пароля за посиланням з листа (UC-10, маршрут
- * `/reset-password?token=…`). Новий пароль перевіряється за тими самими правилами, що й під час
- * реєстрації. Якщо посилання прострочене чи вже використане — повідомлення і пропозиція
- * повторити запит; після успішної зміни — toast-сповіщення і перехід на сторінку входу.
+ * `/reset-password?token=…`). Посилання перевіряється одразу при відкритті сторінки, тож
+ * прострочене чи вже використане посилання показує повідомлення і пропозицію повторити запит
+ * ще до заповнення форми. Новий пароль перевіряється за тими самими правилами, що й під час
+ * реєстрації; після успішної зміни — toast-сповіщення і перехід на сторінку входу.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { resetPassword } from '../api/auth.js';
+import { resetPassword, verifyResetToken } from '../api/auth.js';
 import FormField from '../components/FormField.jsx';
 import PasswordRules from '../components/PasswordRules.jsx';
+import { LoadingState, RequestError } from '../components/RequestState.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import useForm from '../hooks/useForm.js';
+import useRequest from '../hooks/useRequest.js';
 import { errorMessage } from '../utils/errors.js';
 import { validateNewPassword, validatePasswordConfirm } from '../utils/validation.js';
 
@@ -30,6 +33,18 @@ function validateReset({ password, passwordConfirm }) {
     password: validateNewPassword(password),
     passwordConfirm: validatePasswordConfirm(password, passwordConfirm),
   };
+}
+
+/**
+ * Чи означає помилка API, що сервер відхилив сам токен з посилання (а не мережа чи інші поля).
+ * @param {{code?: string, details?: {field: string}[]}} err - помилка запиту.
+ * @returns {boolean} true — посилання недійсне, прострочене або вже використане.
+ */
+function isTokenRejected(err) {
+  return (
+    err?.code === 'INVALID_RESET_TOKEN' ||
+    Boolean(err?.details?.some(({ field }) => field === 'token'))
+  );
 }
 
 /**
@@ -61,6 +76,13 @@ export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
 
+  // Без токена перевіряти нічого — одразу показується повідомлення про недійсне посилання.
+  const loadVerification = useMemo(
+    () => (token ? (signal) => verifyResetToken(token, signal) : null),
+    [token],
+  );
+  const verification = useRequest(loadVerification);
+
   const { values, isValid, handleChange, handleBlur, fieldError, setServerErrors, touchAll } =
     useForm(INITIAL_VALUES, validateReset);
   const [formError, setFormError] = useState(/** @type {string|null} */ (null));
@@ -88,9 +110,8 @@ export default function ResetPasswordPage() {
       navigate('/welcome', { replace: true });
     } catch (err) {
       setIsSubmitting(false);
-      const tokenRejected =
-        err.code === 'INVALID_RESET_TOKEN' || err.details?.some(({ field }) => field === 'token');
-      if (tokenRejected) {
+      // Посилання могло стати недійсним, поки форма була відкрита.
+      if (isTokenRejected(err)) {
         setIsTokenInvalid(true);
         return;
       }
@@ -106,8 +127,12 @@ export default function ResetPasswordPage() {
         <p className="auth-page__subtitle">{t('pages.resetPassword.subtitle')}</p>
       </header>
 
-      {!token || isTokenInvalid ? (
+      {!token || isTokenInvalid || isTokenRejected(verification.error) ? (
         <InvalidLink />
+      ) : verification.isLoading ? (
+        <LoadingState />
+      ) : verification.error ? (
+        <RequestError error={verification.error} onRetry={verification.reload} />
       ) : (
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <FormField
