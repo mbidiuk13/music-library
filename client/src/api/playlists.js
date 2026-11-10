@@ -9,10 +9,14 @@ import { request } from './client.js';
 /**
  * Плейлисти поточного користувача з кількістю треків; «Улюблені» — першим.
  * @param {AbortSignal} [signal] - сигнал для скасування запиту.
- * @returns {Promise<{playlists: object[]}>} плейлисти `{id, title, created_at, track_count, is_favorites}`.
+ * @param {string} [trackId] - UUID треку: якщо передано, кожен плейлист містить ознаку
+ *   `hasTrack` — чи вже є в ньому цей трек.
+ * @returns {Promise<{playlists: object[]}>} плейлисти `{id, title, created_at, track_count, is_favorites}`
+ *   (з `trackId` — ще й `hasTrack`).
  */
-export function fetchPlaylists(signal) {
-  return request('/playlists', { signal });
+export function fetchPlaylists(signal, trackId) {
+  const path = trackId ? `/playlists?${new URLSearchParams({ trackId })}` : '/playlists';
+  return request(path, { signal });
 }
 
 /**

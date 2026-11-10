@@ -3,13 +3,14 @@
  * @description Дія «Додати до плейлиста» (UC-4, FR-10, BPMN рис. 1.4): вікно зі списком плейлистів
  * користувача і формою «Новий плейлист». Вибір наявного плейлиста додає до нього трек
  * (`POST /api/playlists/:id/tracks`); створення нового плейлиста одразу з цим треком виконується
- * одним запитом в одній транзакції (`POST /api/playlists/with-track`). Успіх показується
- * toast-сповіщенням і позначкою «Додано» біля плейлиста; помилки сервера (трек уже в плейлисті,
- * назва зайнята) — зрозумілим текстом у вікні. Вікно лишається відкритим, тож трек можна додати
- * ще в кілька плейлистів.
+ * одним запитом в одній транзакції (`POST /api/playlists/with-track`). Список плейлистів
+ * завантажується разом з ознакою `hasTrack` (`GET /api/playlists?trackId=`), тож плейлисти, де трек
+ * уже є, одразу позначені «Уже є». Успіх показується toast-сповіщенням і позначкою «Додано» біля
+ * плейлиста; помилки сервера (трек уже в плейлисті, назва зайнята) — зрозумілим текстом у вікні.
+ * Вікно лишається відкритим, тож трек можна додати ще в кілька плейлистів.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addTrackToPlaylist, createPlaylistWithTrack, fetchPlaylists } from '../api/playlists.js';
 import { useFavorites } from '../context/FavoritesContext.jsx';
@@ -105,7 +106,18 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
   const { t } = useTranslation();
   const { markFavorite } = useFavorites();
   const { showToast } = useToast();
-  const { data, error, isLoading, reload } = useRequest(fetchPlaylists);
+  // Плейлисти з ознакою hasTrack. Стан «сердечка» узгоджується з тим, чи є трек в «Улюблених»
+  // на сервері (його могли додати чи прибрати в іншій вкладці).
+  const load = useMemo(
+    () => async (signal) => {
+      const result = await fetchPlaylists(signal, track.id);
+      const favorites = result.playlists.find((playlist) => playlist.is_favorites);
+      if (favorites) markFavorite(track.id, favorites.hasTrack);
+      return result;
+    },
+    [track.id, markFavorite],
+  );
+  const { data, error, isLoading, reload } = useRequest(load);
   const [created, setCreated] = useState(/** @type {object[]} */ ([]));
   const [statuses, setStatuses] = useState(
     /** @type {Record<string, 'busy'|'added'|'exists'>} */ ({}),
@@ -116,6 +128,15 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
 
   const playlists = data ? [...data.playlists, ...created] : [];
   const isBusy = isCreating || Object.values(statuses).includes('busy');
+
+  /**
+   * Поточний стан плейлиста у списку: дія користувача в цьому вікні, інакше — «Уже є»,
+   * якщо сервер повідомив, що трек уже в плейлисті.
+   * @param {{id: string, hasTrack?: boolean}} playlist - плейлист.
+   * @returns {'busy'|'added'|'exists'|undefined} стан.
+   */
+  const statusOf = (playlist) =>
+    statuses[playlist.id] ?? (playlist.hasTrack ? 'exists' : undefined);
 
   /**
    * Змінює стан одного плейлиста у списку.
@@ -194,7 +215,7 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
       {data && (
         <ul className="picker__list" aria-label={t('addToPlaylist.chooseLabel')}>
           {playlists.map((playlist) => {
-            const status = statuses[playlist.id];
+            const status = statusOf(playlist);
             const isDone = status === 'added' || status === 'exists';
             return (
               <li key={playlist.id}>
