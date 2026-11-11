@@ -6,16 +6,14 @@
  */
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { forgotPassword } from '../api/auth.js';
 import FormField from '../components/FormField.jsx';
 import useForm from '../hooks/useForm.js';
 import { errorMessage } from '../utils/errors.js';
+import { emailState } from '../utils/navigation.js';
 import { validateEmail } from '../utils/validation.js';
-
-/** Початкові значення полів форми. */
-const INITIAL_VALUES = Object.freeze({ email: '' });
 
 /**
  * Валідація форми — ті самі правила, що й у `POST /api/auth/forgot-password`.
@@ -32,8 +30,9 @@ function validateForgot({ email }) {
  */
 export default function ForgotPasswordPage() {
   const { t } = useTranslation();
+  const location = useLocation();
   const { values, isValid, handleChange, handleBlur, fieldError, setServerErrors, touchAll } =
-    useForm(INITIAL_VALUES, validateForgot);
+    useForm({ email: location.state?.email ?? '' }, validateForgot);
   const [formError, setFormError] = useState(/** @type {string|null} */ (null));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -102,7 +101,7 @@ export default function ForgotPasswordPage() {
       )}
 
       <p className="auth-page__switch">
-        <Link to="/welcome" className="link-accent">
+        <Link to="/welcome" state={emailState(values.email)} className="link-accent">
           {t('pages.forgotPassword.backToLogin')}
         </Link>
       </p>

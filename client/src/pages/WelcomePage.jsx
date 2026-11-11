@@ -14,6 +14,7 @@ import Icon from '../components/Icon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import useForm from '../hooks/useForm.js';
 import { errorMessage } from '../utils/errors.js';
+import { emailState } from '../utils/navigation.js';
 import { validateRequired } from '../utils/validation.js';
 
 /**
@@ -93,7 +94,7 @@ export default function WelcomePage() {
           onBlur={handleBlur}
           error={fieldError('password')}
           aside={
-            <Link to="/forgot-password" className="link-accent">
+            <Link to="/forgot-password" state={emailState(values.email)} className="link-accent">
               {t('pages.welcome.forgotPassword')}
             </Link>
           }
