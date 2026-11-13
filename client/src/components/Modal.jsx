@@ -1,34 +1,17 @@
-/**
- * @module components/Modal
- * @description Власне модальне вікно (розділ 9 SPEC «Стани UI»: підтвердження й форми — не
- * `window.confirm`). Побудоване на нативному елементі `<dialog>`: браузер сам утримує фокус
- * усередині, робить решту сторінки неактивною і закриває вікно клавішею Esc.
- * Вікно відкрите, поки компонент змонтований; закриває його батьківський компонент.
- */
+//нативний <dialog>: браузер сам утримує фокус усередині, блокує решту сторінки й обробляє Esc
 
 import { useEffect, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Icon from './Icon.jsx';
 
-/**
- * Модальне вікно.
- * @param {object} props - властивості.
- * @param {string} props.title - заголовок вікна.
- * @param {() => void} props.onClose - закриття (хрестик, Esc, клік поза вікном).
- * @param {boolean} [props.isBusy=false] - виконується запит: закрити вікно не можна, щоб не втратити результат.
- * @param {'sm'|'md'|'lg'} [props.size='sm'] - ширина вікна.
- * @param {import('react').ReactNode} props.children - вміст вікна.
- * @returns {JSX.Element} елемент `<dialog>`.
- */
 export default function Modal({ title, onClose, isBusy = false, size = 'sm', children }) {
   const { t } = useTranslation();
   const dialogRef = useRef(/** @type {HTMLDialogElement|null} */ (null));
   const pressedOnBackdrop = useRef(false);
   const titleId = useId();
 
-  // Відкриття в модальному режимі під час монтування, закриття — під час демонтування.
-  // showModal() ставить фокус на першу кнопку (хрестик), тому поле з `data-autofocus`
-  // (напр. назва плейлиста) отримує фокус окремо — можна одразу вводити текст.
+  /*showModal() ставить фокус на першу кнопку (хрестик), тому поле з `data-autofocus`
+  фокусується окремо, щоб можна було одразу вводити текст*/
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog.open) dialog.showModal();
@@ -36,22 +19,13 @@ export default function Modal({ title, onClose, isBusy = false, size = 'sm', chi
     return () => dialog.close();
   }, []);
 
-  /**
-   * Клавіша Esc: браузер закрив би вікно сам — замість цього рішення приймає батьківський компонент.
-   * @param {import('react').SyntheticEvent<HTMLDialogElement>} event - подія `cancel`.
-   * @returns {void}
-   */
+  //Esc: браузер закрив би вікно сам, натомість рішення приймає батьківський компонент
   const handleCancel = (event) => {
     event.preventDefault();
     if (!isBusy) onClose();
   };
 
-  /**
-   * Клік по затемненню навколо вікна (ціль події — сам `<dialog>`, а не його вміст).
-   * Закриває вікно, лише якщо і натискання, і відпускання кнопки миші були поза вмістом.
-   * @param {import('react').MouseEvent<HTMLDialogElement>} event - подія кліку.
-   * @returns {void}
-   */
+  //закриває, лише якщо і натискання, і відпускання миші були на затемненні (ціль сам <dialog>)
   const handleClick = (event) => {
     const isBackdrop = event.target === dialogRef.current;
     if (isBackdrop && pressedOnBackdrop.current && !isBusy) onClose();

@@ -1,21 +1,12 @@
-/**
- * @module modules/auth/password.rules
- * @description Правила надійності пароля (FR-2, тест 1.1 розділу 4 ПЗ):
- * довжина 10–64 символи; лише латинські літери, цифри та спецсимволи (друковані ASCII без пробілу);
- * щонайменше одна латинська літера, одна цифра й один спецсимвол.
- * Ті самі правила дублюються на клієнті.
- */
-
-/** Мінімальна і максимальна довжина пароля. */
+//правила пароля FR-2; ті самі правила дублюються на клієнті
 export const PASSWORD_LENGTH = Object.freeze({ min: 10, max: 64 });
 
-/** Дозволені символи: друковані ASCII-символи без пробілу (коди 0x21–0x7E). */
+//друковані ASCII-символи без пробілу (0x21–0x7E)
 const ALLOWED_CHARS = /^[\x21-\x7E]*$/;
 const HAS_LETTER = /[A-Za-z]/;
 const HAS_DIGIT = /[0-9]/;
 const HAS_SPECIAL = /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/;
 
-/** Повідомлення про порушення правил (показуються користувачу). */
 export const PASSWORD_MESSAGES = Object.freeze({
   required: 'Введіть пароль',
   charset: 'Пароль може містити лише латинські літери, цифри та спеціальні символи',
@@ -25,12 +16,7 @@ export const PASSWORD_MESSAGES = Object.freeze({
   special: 'Пароль має містити хоча б один спеціальний символ',
 });
 
-/**
- * Перевіряє пароль за всіма правилами й повертає перше порушення.
- * Порядок перевірок: наявність → набір символів → довжина → класи символів.
- * @param {unknown} password - значення поля «Пароль» з тіла запиту.
- * @returns {string|null} повідомлення про помилку українською або null, якщо пароль надійний.
- */
+//повертає перше порушення або null
 export function checkPassword(password) {
   if (typeof password !== 'string' || password === '') return PASSWORD_MESSAGES.required;
   if (!ALLOWED_CHARS.test(password)) return PASSWORD_MESSAGES.charset;

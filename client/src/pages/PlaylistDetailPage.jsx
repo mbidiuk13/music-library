@@ -1,11 +1,3 @@
-/**
- * @module pages/PlaylistDetailPage
- * @description Треки обраного плейлиста (нижня частина рис. 4.4 ТЗ, маршрут `/playlists/:id`):
- * таблиця «# / Назва / Жанр / Додано / Дії» з відтворенням і вилученням треку, а також
- * перейменування й видалення плейлиста (UC-11, FR-12). Для «Улюблених» перейменування
- * й видалення недоступні (сервер теж їх забороняє — 403). Чужий або видалений плейлист — 404.
- */
-
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -25,15 +17,10 @@ import { useToast } from '../context/ToastContext.jsx';
 import useRequest from '../hooks/useRequest.js';
 import { errorMessage } from '../utils/errors.js';
 
-/**
- * Сторінка плейлиста (вкладена в PlaylistsPage).
- * @returns {JSX.Element} панель з треками плейлиста.
- */
 export default function PlaylistDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-  /** @type {import('./PlaylistsPage.jsx').LibraryOutletContext} */
   const { updatePlaylists } = useOutletContext();
   const { markFavorite } = useFavorites();
   const { showToast } = useToast();
@@ -41,7 +28,7 @@ export default function PlaylistDetailPage() {
   const load = useMemo(() => (signal) => fetchPlaylist(id, signal), [id]);
   const { data, error, isLoading, reload } = useRequest(load);
 
-  // Локальні зміни (перейменування, вилучені треки) належать конкретній відповіді сервера.
+  //локальні зміни (перейменування, вилучені треки) належать конкретній відповіді сервера
   const [edits, setEdits] = useState({ data: null, playlist: null, tracks: null });
   const current = edits.data === data && edits.playlist ? edits : data;
   const playlist = current?.playlist;
@@ -50,24 +37,13 @@ export default function PlaylistDetailPage() {
   const [dialog, setDialog] = useState(/** @type {'rename'|'delete'|null} */ (null));
   const [actionError, setActionError] = useState(/** @type {unknown} */ (null));
 
-  /**
-   * Змінює плейлист і/або треки локально, без повторного завантаження.
-   * @param {(state: {playlist: object, tracks: object[]}) => {playlist: object, tracks: object[]}} update -
-   *   функція оновлення.
-   * @returns {void}
-   */
   const updateLocal = (update) =>
     setEdits((prev) => {
       const base = prev.data === data && prev.playlist ? prev : data;
       return { data, ...update({ playlist: base.playlist, tracks: base.tracks }) };
     });
 
-  /**
-   * Вилучає трек з плейлиста (UC-11). Якщо трека в плейлисті вже немає (404), рядок теж прибирається.
-   * @param {object} track - трек.
-   * @returns {Promise<void>}
-   * @throws {import('../api/client.js').ApiError} інша помилка (кнопка рядка знову стає активною).
-   */
+  //якщо трека в плейлисті вже немає (404), рядок теж прибирається
   const handleRemove = async (track) => {
     setActionError(null);
     try {
@@ -91,13 +67,7 @@ export default function PlaylistDetailPage() {
     showToast(t('library.trackRemoved', { title: track.title }));
   };
 
-  /**
-   * Трек з цього плейлиста додано до іншого плейлиста: оновлює картки медіатеки
-   * (новий плейлист з'являється, у наявного зростає кількість треків).
-   * @param {object} target - плейлист, до якого додано трек.
-   * @param {{created: boolean}} info - чи плейлист щойно створено.
-   * @returns {void}
-   */
+  //трек додано до іншого плейлиста — оновлюються картки медіатеки над панеллю
   const handleAddedElsewhere = (target, { created }) => {
     updatePlaylists((list) =>
       created
@@ -108,12 +78,6 @@ export default function PlaylistDetailPage() {
     );
   };
 
-  /**
-   * Перейменовує плейлист (UC-11).
-   * @param {string} title - нова назва.
-   * @returns {Promise<void>}
-   * @throws {import('../api/client.js').ApiError} помилка сервера (показується у формі).
-   */
   const handleRename = async (title) => {
     const { playlist: renamed } = await renamePlaylist(id, title);
     updateLocal((state) => ({ ...state, playlist: { ...state.playlist, title: renamed.title } }));
@@ -124,11 +88,6 @@ export default function PlaylistDetailPage() {
     showToast(t('library.renamed', { title: renamed.title }));
   };
 
-  /**
-   * Видаляє плейлист (UC-11) і повертає до списку плейлистів.
-   * @returns {Promise<void>}
-   * @throws {import('../api/client.js').ApiError} помилка сервера (показується у вікні).
-   */
   const handleDelete = async () => {
     await deletePlaylist(id);
     updatePlaylists((list) => list.filter((item) => item.id !== id));

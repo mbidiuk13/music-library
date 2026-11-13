@@ -1,9 +1,3 @@
-/**
- * @file Точка входу клієнта: ініціалізує локалізацію і монтує React-застосунок у DOM.
- * Провайдери стану (сповіщення, автентифікація, плеєр) розташовані над маршрутами, тож не
- * перемонтовуються під час навігації.
- */
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -15,6 +9,7 @@ import { PlayerProvider } from './context/PlayerContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import './styles/global.css';
 
+//провайдери над маршрутами: навігація їх не перемонтовує, тож музика й сповіщення не перериваються
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

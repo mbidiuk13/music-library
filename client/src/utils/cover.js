@@ -1,10 +1,5 @@
-/**
- * @module utils/cover
- * @description Обкладинки треків. Справжніх обкладинок немає — квадрат із градієнтом,
- * пара кольорів якого детерміновано обирається з id треку (розділ «Дизайн» SPEC).
- */
+//справжніх обкладинок немає: пара кольорів градієнта детерміновано обирається з id треку
 
-/** Набір градієнтів гами «Захід сонця». */
 const COVER_GRADIENTS = [
   ['#ff7a59', '#c04cfd'],
   ['#ffb347', '#ff4f8b'],
@@ -13,11 +8,6 @@ const COVER_GRADIENTS = [
   ['#c04cfd', '#5b2bff'],
 ];
 
-/**
- * Обчислює невід'ємний хеш рядка (djb2), щоб той самий id завжди давав той самий колір.
- * @param {string} value - рядок (UUID треку).
- * @returns {number} ціле невід'ємне число.
- */
 function hashString(value) {
   let hash = 5381;
   for (let i = 0; i < value.length; i += 1) {
@@ -26,11 +16,6 @@ function hashString(value) {
   return hash;
 }
 
-/**
- * Повертає CSS-градієнт обкладинки для треку.
- * @param {string} trackId - UUID треку.
- * @returns {string} значення CSS `background`.
- */
 export function coverGradient(trackId) {
   const [from, to] = COVER_GRADIENTS[hashString(String(trackId)) % COVER_GRADIENTS.length];
   return `linear-gradient(135deg, ${from}, ${to})`;

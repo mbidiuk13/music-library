@@ -1,9 +1,4 @@
-/**
- * @module pages/ForgotPasswordPage
- * @description Запит на відновлення пароля (UC-10, маршрут `/forgot-password`). Після надсилання
- * завжди показується однакове повідомлення «Якщо обліковий запис існує, лист надіслано» —
- * за ним не можна дізнатися, чи зареєстрована пошта (захист від перебору адрес).
- */
+//відповідь завжди однакова, щоб не можна було дізнатися, чи зареєстрована пошта
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -15,19 +10,10 @@ import { errorMessage } from '../utils/errors.js';
 import { emailState } from '../utils/navigation.js';
 import { validateEmail } from '../utils/validation.js';
 
-/**
- * Валідація форми — ті самі правила, що й у `POST /api/auth/forgot-password`.
- * @param {{email: string}} values - значення полів.
- * @returns {{email: string|null}} ключ i18n помилки.
- */
 function validateForgot({ email }) {
   return { email: validateEmail(email) };
 }
 
-/**
- * Сторінка запиту на відновлення пароля.
- * @returns {JSX.Element} сторінка.
- */
 export default function ForgotPasswordPage() {
   const { t } = useTranslation();
   const location = useLocation();
@@ -37,11 +23,6 @@ export default function ForgotPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
-  /**
-   * Надсилає запит на лист із посиланням для відновлення.
-   * @param {import('react').FormEvent<HTMLFormElement>} event - подія надсилання.
-   * @returns {Promise<void>}
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     touchAll();

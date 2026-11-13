@@ -1,19 +1,6 @@
-/**
- * @module config
- * @description Конфігурація сервера. Читає змінні середовища (process.env), перевіряє їх
- * і експортує єдиний незмінний об'єкт налаштувань. Файл .env підключається вбудованим
- * прапорцем Node.js `--env-file`, без пакета dotenv.
- */
-
+//.env підключається прапорцем Node.js `--env-file`, без пакета dotenv
 import { fileURLToPath } from 'node:url';
 
-/**
- * Читає змінну середовища як ціле додатне число.
- * @param {string} name - назва змінної середовища.
- * @param {number} fallback - значення за замовчуванням, якщо змінну не задано.
- * @returns {number} ціле число > 0.
- * @throws {Error} якщо значення не є цілим додатним числом.
- */
 function readPositiveInt(name, fallback) {
   const raw = process.env[name];
   if (raw === undefined || raw === '') return fallback;
@@ -24,12 +11,6 @@ function readPositiveInt(name, fallback) {
   return value;
 }
 
-/**
- * Читає рядкову змінну середовища.
- * @param {string} name - назва змінної середовища.
- * @param {string} [fallback=''] - значення за замовчуванням.
- * @returns {string} значення змінної або значення за замовчуванням.
- */
 function readString(name, fallback = '') {
   const raw = process.env[name];
   return raw === undefined || raw === '' ? fallback : raw;
@@ -37,17 +18,14 @@ function readString(name, fallback = '') {
 
 const nodeEnv = readString('NODE_ENV', 'development');
 
-/** Тека зі збіркою клієнта за замовчуванням: `client/dist` у корені монорепозиторію. */
 const DEFAULT_CLIENT_DIST = fileURLToPath(new URL('../../../client/dist', import.meta.url));
 
-/** Об'єкт конфігурації застосунку (див. .env.example). */
 const config = Object.freeze({
   port: readPositiveInt('PORT', 4000),
   nodeEnv,
   isProduction: nodeEnv === 'production',
   isTest: nodeEnv === 'test',
   clientUrl: readString('CLIENT_URL', 'http://localhost:5173'),
-  /** Шлях до зібраного клієнта, який сервер роздає в продакшені (NODE_ENV=production). */
   clientDist: readString('CLIENT_DIST', DEFAULT_CLIENT_DIST),
 
   databaseUrl: readString('DATABASE_URL'),
@@ -55,7 +33,6 @@ const config = Object.freeze({
   jwt: Object.freeze({
     secret: readString('JWT_SECRET'),
     expiresIn: readString('JWT_EXPIRES_IN', '24h'),
-    /** Строк дії посилання для відновлення пароля. */
     passwordResetExpiresIn: '15m',
   }),
 
@@ -72,10 +49,9 @@ const config = Object.freeze({
     popularLimit: readPositiveInt('POPULAR_LIMIT', 100),
   }),
 
-  /** Назва системного плейлиста, який створюється кожному користувачу (не можна видалити). */
+  //системний плейлист кожного користувача; видалити його не можна
   favoritesTitle: 'Улюблені',
 
-  /** Кількість раундів bcrypt для хешування паролів (розділ 3.4 ПЗ). */
   bcryptSaltRounds: 10,
 
   admin: Object.freeze({

@@ -1,9 +1,4 @@
-/**
- * @module modules/auth/auth.routes
- * @description Маршрути Auth Controller (`/api/auth/*`) і серверні правила валідації полів.
- * Ті самі правила дублюються на клієнті (форми реєстрації та входу).
- */
-
+//серверні правила валідації дублюють клієнтські (форми реєстрації та входу)
 import { Router } from 'express';
 import { body } from 'express-validator';
 import { authenticate } from '../../middleware/auth.js';
@@ -12,14 +7,9 @@ import asyncHandler from '../../utils/asyncHandler.js';
 import * as controller from './auth.controller.js';
 import { checkPassword } from './password.rules.js';
 
-/** Максимальна довжина email і імені користувача (як у схемі БД). */
 const EMAIL_MAX = 255;
 const USERNAME_MAX = 100;
 
-/**
- * Правило для поля email: рядок, коректний формат, зберігається в нижньому регістрі.
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
 const emailRule = () =>
   body('email')
     .isString()
@@ -37,11 +27,6 @@ const emailRule = () =>
     .bail()
     .toLowerCase();
 
-/**
- * Правило для нового пароля (FR-2): див. modules/auth/password.rules.
- * @param {string} field - назва поля в тілі запиту.
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
 const newPasswordRule = (field) =>
   body(field).custom((value) => {
     const error = checkPassword(value);
@@ -49,19 +34,12 @@ const newPasswordRule = (field) =>
     return true;
   });
 
-/**
- * Правило для підтвердження пароля: має збігатися з полем `password`.
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
 const passwordConfirmRule = () =>
   body('passwordConfirm')
     .custom((value, { req }) => value === req.body.password)
     .withMessage('Паролі не збігаються');
 
-/**
- * Правило для токена відновлення пароля: непорожній рядок (сам токен перевіряє auth.service).
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
+//тут лише непорожній рядок; сам токен перевіряє auth.service
 const resetTokenRule = () =>
   body('token')
     .isString()
@@ -72,10 +50,6 @@ const resetTokenRule = () =>
 
 const router = Router();
 
-/**
- * Реєстрація (UC-1).
- * @route POST /api/auth/register
- */
 router.post(
   '/register',
   emailRule(),
@@ -95,10 +69,6 @@ router.post(
   asyncHandler(controller.register),
 );
 
-/**
- * Вхід (UC-2).
- * @route POST /api/auth/login
- */
 router.post(
   '/login',
   body('email')
@@ -119,16 +89,9 @@ router.post(
   asyncHandler(controller.login),
 );
 
-/**
- * Запит на відновлення пароля.
- * @route POST /api/auth/forgot-password
- */
 router.post('/forgot-password', emailRule(), validate, asyncHandler(controller.forgotPassword));
 
-/**
- * Перевірка посилання для відновлення пароля перед показом форми (без змін у БД).
- * @route POST /api/auth/reset-password/verify
- */
+//перевірка посилання перед показом форми, без змін у БД
 router.post(
   '/reset-password/verify',
   resetTokenRule(),
@@ -136,10 +99,6 @@ router.post(
   asyncHandler(controller.verifyResetToken),
 );
 
-/**
- * Встановлення нового пароля за токеном із листа.
- * @route POST /api/auth/reset-password
- */
 router.post(
   '/reset-password',
   resetTokenRule(),
@@ -149,10 +108,6 @@ router.post(
   asyncHandler(controller.resetPassword),
 );
 
-/**
- * Дані поточного користувача.
- * @route GET /api/auth/me
- */
 router.get('/me', authenticate, asyncHandler(controller.me));
 
 export default router;

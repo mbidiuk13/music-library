@@ -1,18 +1,7 @@
-/**
- * @module db/seed
- * @description Скрипт `npm run seed`: заповнює таблицю track метаданими 50 треків
- * з database/seed.sql однією транзакцією. Якщо треки вже є, нічого не робить,
- * щоб повторний запуск не створив дублікатів.
- */
-
 import { query, transaction } from './pool.js';
 import { readSqlFile, runDbScript } from './sqlFile.js';
 
-/**
- * Додає початкові треки, якщо таблиця track порожня.
- * @returns {Promise<void>}
- * @throws {Error} якщо схему не створено (спершу npm run migrate) або дані порушують обмеження.
- */
+//якщо треки вже є, нічого не робить, щоб повторний запуск не створив дублікатів
 async function seed() {
   const { rows } = await query('SELECT COUNT(*)::int AS count FROM track');
   if (rows[0].count > 0) {

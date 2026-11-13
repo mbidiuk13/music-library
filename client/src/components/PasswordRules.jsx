@@ -1,18 +1,7 @@
-/**
- * @module components/PasswordRules
- * @description Підказка-чеклист вимог до пароля (FR-2) під полем «Пароль»:
- * виконані вимоги позначаються галочкою під час введення.
- */
-
 import { useTranslation } from 'react-i18next';
 import { LIMITS, passwordRequirements } from '../utils/validation.js';
 import Icon from './Icon.jsx';
 
-/**
- * Чеклист вимог до пароля.
- * @param {{password: string}} props - поточне значення пароля.
- * @returns {JSX.Element} список вимог.
- */
 export default function PasswordRules({ password }) {
   const { t } = useTranslation();
   return (

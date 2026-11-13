@@ -1,15 +1,6 @@
-/**
- * @module pages/NotFoundPage
- * @description Сторінка 404 для невідомих маршрутів.
- */
-
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-/**
- * Сторінка «Сторінку не знайдено».
- * @returns {JSX.Element} сторінка.
- */
 export default function NotFoundPage() {
   const { t } = useTranslation();
   return (

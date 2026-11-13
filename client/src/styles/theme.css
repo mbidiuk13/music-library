@@ -1,49 +1,36 @@
-/*
- * Гама «Захід сонця» (розділ «Дизайн» SPEC, макети рис. 4.1–4.5 ТЗ).
- * Усі кольори інтерфейсу задаються лише тут, через CSS-змінні.
- * Бірюзові й зелені відтінки свідомо не використовуються.
- */
+/*гама «Захід сонця»*/
 
 :root {
-  /* Тло */
   --bg: linear-gradient(160deg, #171327, #0d0a18);
   --bg-side: #0a0814;
   --bg-player: #080611;
 
-  /* Поверхні й обводки */
   --surface: rgba(255, 255, 255, 0.03);
   --surface-hover: rgba(255, 255, 255, 0.06);
   --border: #2a2342;
   --border-strong: #3a3158;
 
-  /* Поля форм */
   --input-bg: #0d0a18;
   --placeholder: #5f5878;
 
-  /* Текст */
   --text: #ffffff;
   --muted: #a7a1c0;
 
-  /* Акценти */
   --accent-1: #ff7a59;
   --accent-2: #c04cfd;
   --accent-grad: linear-gradient(90deg, #ff7a59, #c04cfd);
   --danger: #ff8fa3;
   --danger-soft: rgba(255, 143, 163, 0.12);
 
-  /* Активний пункт меню і другорядні кнопки */
   --active-bg: rgba(255, 122, 89, 0.1);
   --active-border: rgba(255, 122, 89, 0.4);
   --active-text: #ff9b7f;
 
-  /* Кнопка Play у плеєрі — біла з темною іконкою */
   --play-bg: #ffffff;
   --play-icon: #0d0a18;
 
-  /* Toast-сповіщення */
   --toast-bg: #1d1733;
 
-  /* Розміри й шрифт */
   --radius-card: 16px;
   --radius-control: 10px;
   --sidebar-width: 240px;
@@ -54,7 +41,7 @@
   color-scheme: dark;
 }
 
-/* На телефоні плеєр нижчий (спрощений), від його висоти рахується відступ toast-сповіщень. */
+/*на телефоні плеєр нижчий (спрощений), від його висоти рахується відступ toast-сповіщень*/
 @media (max-width: 767px) {
   :root {
     --player-height: 92px;

@@ -1,10 +1,4 @@
-/**
- * @module pages/SearchPage
- * @description Сторінка пошуку (рис. 4.3 ТЗ, UC-3, маршрут `/search`): рядок пошуку за назвою,
- * виконавцем чи жанром і плитки «Навігація за жанрами». Пошук запускається клавішею Enter або
- * вибором жанру; параметри зберігаються в адресі (`?q=…` / `?genre=…`), тому працює кнопка «Назад».
- * Порожній запит не надсилається; якщо збігів немає — «Нічого не знайдено».
- */
+//параметри пошуку зберігаються в адресі (?q=… / ?genre=…), тому працює кнопка «Назад»
 
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -17,28 +11,14 @@ import useRequest from '../hooks/useRequest.js';
 import { genreGradient } from '../utils/genres.js';
 import { LIMITS, validateSearchQuery } from '../utils/validation.js';
 
-/** Кількість результатів, що завантажуються за один раз. */
 const PAGE_SIZE = 50;
 
-/**
- * Рядок пошуку. Перемонтовується (key) при зміні запиту в адресі, щоб показувати актуальний текст.
- * @param {object} props - властивості.
- * @param {string} props.initialQuery - запит з адреси.
- * @param {string|null} props.initialError - ключ i18n помилки запиту з адреси (напр. задовгий).
- * @param {(query: string) => void} props.onSearch - запуск пошуку з перевіреним запитом.
- * @param {() => void} props.onClear - очищення пошуку.
- * @returns {JSX.Element} форма пошуку.
- */
+//перемонтовується (key) при зміні запиту в адресі, щоб показувати актуальний текст
 function SearchForm({ initialQuery, initialError, onSearch, onClear }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(initialQuery);
   const [error, setError] = useState(initialError);
 
-  /**
-   * Первинна валідація запиту на клієнті (UC-3) і запуск пошуку.
-   * @param {import('react').FormEvent<HTMLFormElement>} event - подія надсилання (Enter).
-   * @returns {void}
-   */
   const handleSubmit = (event) => {
     event.preventDefault();
     const validationError = validateSearchQuery(draft);
@@ -46,10 +26,6 @@ function SearchForm({ initialQuery, initialError, onSearch, onClear }) {
     if (!validationError) onSearch(draft.trim());
   };
 
-  /**
-   * Очищає поле і результати.
-   * @returns {void}
-   */
   const handleClear = () => {
     setDraft('');
     setError(null);
@@ -99,11 +75,6 @@ function SearchForm({ initialQuery, initialError, onSearch, onClear }) {
   );
 }
 
-/**
- * Плитки «Навігація за жанрами».
- * @param {{onSelect: (genre: string) => void}} props - вибір жанру.
- * @returns {JSX.Element} секція з плитками.
- */
 function GenreTiles({ onSelect }) {
   const { t } = useTranslation();
   const { data, error, isLoading, reload } = useRequest(fetchVocabularies);
@@ -134,11 +105,6 @@ function GenreTiles({ onSelect }) {
   );
 }
 
-/**
- * Результати пошуку з кнопкою «Показати ще».
- * @param {{q: string, genre: string, onClear: () => void}} props - параметри пошуку з адреси.
- * @returns {JSX.Element} секція з результатами.
- */
 function SearchResults({ q, genre, onClear }) {
   const { t } = useTranslation();
   const load = useMemo(
@@ -147,16 +113,12 @@ function SearchResults({ q, genre, onClear }) {
   );
   const { data, error, isLoading, reload } = useRequest(load);
 
-  // Додаткові сторінки належать конкретному запиту (load): для нового запиту вони не показуються.
+  //додаткові сторінки належать конкретному запиту (load): для нового запиту вони не показуються
   const [more, setMore] = useState({ load: null, tracks: [], isLoading: false, error: null });
   const extra = more.load === load ? more : { tracks: [], isLoading: false, error: null };
   const tracks = data ? [...data.tracks, ...extra.tracks] : [];
   const hasMore = Boolean(data) && tracks.length < data.total;
 
-  /**
-   * Завантажує наступну сторінку результатів.
-   * @returns {Promise<void>}
-   */
   const handleLoadMore = async () => {
     setMore({ load, tracks: extra.tracks, isLoading: true, error: null });
     try {
@@ -211,20 +173,15 @@ function SearchResults({ q, genre, onClear }) {
   );
 }
 
-/**
- * Сторінка пошуку.
- * @returns {JSX.Element} сторінка.
- */
 export default function SearchPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get('q')?.trim() ?? '';
   const genre = searchParams.get('genre') ?? '';
-  // Запит з адреси проходить ту саму первинну валідацію, що й введений у поле (UC-3).
+  //запит з адреси проходить ту саму первинну валідацію, що й введений у поле (UC-3)
   const queryError = q ? validateSearchQuery(q) : null;
   const hasSearch = Boolean((q && !queryError) || genre);
 
-  /** Повертає сторінку до плиток жанрів. */
   const clearSearch = () => setSearchParams({});
 
   return (

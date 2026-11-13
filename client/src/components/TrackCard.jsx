@@ -1,23 +1,7 @@
-/**
- * @module components/TrackCard
- * @description Картка треку для блоку «Підібрано для вас» (рис. 4.2): обкладинка-градієнт
- * з кнопкою Play, назва й виконавець. У персональній гілці рекомендацій показує ступінь
- * косинусної подібності до вподобань користувача.
- */
-
 import { useTranslation } from 'react-i18next';
 import { coverGradient } from '../utils/cover.js';
 import Icon from './Icon.jsx';
 
-/**
- * Картка треку.
- * @param {object} props - властивості.
- * @param {object} props.track - трек `{id, title, artist, similarity?}`.
- * @param {boolean} props.isCurrent - чи це поточний трек плеєра.
- * @param {boolean} props.isPlaying - чи грає зараз поточний трек.
- * @param {() => void} props.onPlay - відтворення / пауза.
- * @returns {JSX.Element} картка.
- */
 export default function TrackCard({ track, isCurrent, isPlaying, onPlay }) {
   const { t } = useTranslation();
   const playLabel = t(isCurrent && isPlaying ? 'player.pause' : 'tracks.playTrack', {

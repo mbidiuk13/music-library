@@ -1,10 +1,3 @@
-/**
- * @module components/PlayerBar
- * @description Нижня панель плеєра (макети рис. 4.2–4.5 ТЗ): обкладинка-градієнт,
- * назва й виконавець, ♥ (лише авторизованим), ⏮ ▶/⏸ ⏭, прогрес-бар із перемотуванням,
- * час і гучність. Стан і дії — з PlayerContext.
- */
-
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -14,25 +7,13 @@ import { formatTime } from '../utils/format.js';
 import FavoriteButton from './FavoriteButton.jsx';
 import Icon from './Icon.jsx';
 
-/** Крок зміни гучності повзунком. */
 const VOLUME_STEP = 0.01;
 
-/**
- * Обчислює відсоток заповнення смуги (для градієнтної заливки повзунка).
- * @param {number} value - поточне значення.
- * @param {number} max - максимальне значення.
- * @returns {string} відсоток у форматі CSS, напр. `42%`.
- */
 function fillPercent(value, max) {
   return `${max > 0 ? Math.min((value / max) * 100, 100) : 0}%`;
 }
 
-/**
- * Прогрес-бар з поточним часом і тривалістю. Окремий компонент, бо оновлюється
- * кілька разів на секунду, — решта панелі при цьому не перемальовується.
- * @param {{disabled: boolean, onSeek: (time: number) => void}} props - властивості.
- * @returns {JSX.Element} смуга прогресу.
- */
+//окремий компонент, оновлюється кілька разів на секунду, а решта панелі не перемальовується
 function ProgressBar({ disabled, onSeek }) {
   const { t } = useTranslation();
   const { currentTime, duration } = usePlayerProgress();
@@ -57,10 +38,6 @@ function ProgressBar({ disabled, onSeek }) {
   );
 }
 
-/**
- * Нижня панель плеєра.
- * @returns {JSX.Element} панель плеєра.
- */
 export default function PlayerBar() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
@@ -79,13 +56,9 @@ export default function PlayerBar() {
     setVolume,
   } = usePlayer();
 
-  // Гучність до вимкнення звуку — щоб повернути її кнопкою.
+  //гучність до вимкнення звуку, щоб повернути її кнопкою
   const volumeBeforeMuteRef = useRef(volume || 0.8);
 
-  /**
-   * Вимикає звук або повертає попередню гучність.
-   * @returns {void}
-   */
   const toggleMute = () => {
     if (volume > 0) {
       volumeBeforeMuteRef.current = volume;

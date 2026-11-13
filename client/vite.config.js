@@ -1,7 +1,3 @@
-/**
- * @file Налаштування Vite: плагін React і проксі запитів `/api` на локальний сервер Express.
- */
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

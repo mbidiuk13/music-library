@@ -1,15 +1,6 @@
-/**
- * @module pages/ForbiddenPage
- * @description Сторінка 403: користувач без ролі адміністратора відкрив `/admin`.
- */
-
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-/**
- * Сторінка «Доступ заборонено».
- * @returns {JSX.Element} сторінка.
- */
 export default function ForbiddenPage() {
   const { t } = useTranslation();
   return (

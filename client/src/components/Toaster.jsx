@@ -1,40 +1,21 @@
-/**
- * @module components/Toaster
- * @description Контейнер toast-сповіщень у кутку екрана. Контейнер — елемент `popover`, тож він
- * у верхньому шарі сторінки (top layer) і видимий навіть поверх відкритого модального вікна
- * (напр. «Трек додано до плейлиста» у вікні «Додати до плейлиста»). Кожне нове сповіщення
- * піднімає контейнер над вікнами, відкритими раніше. Програми читання з екрана озвучують
- * сповіщення завдяки `aria-live`.
- */
+//контейнер popover, він у верхньому шарі (top layer), тож видимий і поверх модального вікна
 
 import { useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Icon from './Icon.jsx';
 
-/**
- * Перевіряє, чи браузер підтримує Popover API (Chrome 114+, Firefox 125+, Safari 17+).
- * Без підтримки контейнер лишається звичайним фіксованим блоком.
- * @param {HTMLElement|null} element - елемент контейнера.
- * @returns {boolean} true, якщо можна викликати showPopover().
- */
+//без Popover API контейнер лишається звичайним фіксованим блоком
 function supportsPopover(element) {
   return typeof element?.showPopover === 'function';
 }
 
-/**
- * Контейнер сповіщень.
- * @param {object} props - властивості.
- * @param {import('../context/ToastContext.jsx').Toast[]} props.toasts - сповіщення на екрані.
- * @param {(id: number) => void} props.onDismiss - закриття сповіщення кнопкою.
- * @returns {JSX.Element} контейнер сповіщень.
- */
 export default function Toaster({ toasts, onDismiss }) {
   const { t } = useTranslation();
   const containerRef = useRef(/** @type {HTMLDivElement|null} */ (null));
   const lastIdRef = useRef(0);
 
-  // Нове сповіщення: контейнер заново показується у верхньому шарі — над усіма відкритими
-  // модальними вікнами. Порожній контейнер ховається.
+  /*нове сповіщення: контейнер заново показується у верхньому шарі — над усіма відкритими
+  модальними вікнами, порожній контейнер ховається*/
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!supportsPopover(container)) return;

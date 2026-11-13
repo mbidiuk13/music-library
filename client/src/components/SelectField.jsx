@@ -1,20 +1,6 @@
-/**
- * @module components/SelectField
- * @description Поле вибору зі списку (жанр, тональність, настрій у формі адміністратора): значення
- * обирається зі словника, а не вводиться текстом, щоб one-hot кодування в Recommendation Engine
- * не ламалося від різного написання («Рок»/«рок»/«Rock»). Оформлення й помилка — як у FormField.
- */
+/*значення обирається зі словника, а не вводиться текстом, щоб one-hot кодування в Recommendation
+Engine не ламалося від різного написання*/
 
-/**
- * Поле вибору з підписом і помилкою.
- * @param {object} props - властивості; решта передаються елементу `<select>`.
- * @param {string} props.name - назва поля (і основа id).
- * @param {string} props.label - підпис поля.
- * @param {{value: string, label: string}[]} props.options - варіанти вибору.
- * @param {string} props.placeholder - текст порожнього варіанта («Оберіть…»).
- * @param {string|null} [props.error] - текст помилки.
- * @returns {JSX.Element} поле вибору.
- */
 export default function SelectField({ name, label, options, placeholder, error, ...selectProps }) {
   const id = `field-${name}`;
   const errorId = `${id}-error`;

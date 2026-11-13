@@ -1,10 +1,5 @@
-/**
- * @module components/Icon
- * @description Набір SVG-іконок інтерфейсу (меню, плеєр, медіатека, адмін-панель). Іконки декоративні:
- * доступна назва задається атрибутом `aria-label` на кнопці чи посиланні.
- */
+//іконки декоративні, доступну назву задає aria-label на кнопці чи посиланні
 
-/** Контури іконок (viewBox 0 0 24 24). */
 const PATHS = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
   search:
@@ -41,15 +36,6 @@ const PATHS = {
     'M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A6 6 0 0 0 6 20h13a5 5 0 0 0 .35-9.96M14 13v4h-4v-4H7l5-5 5 5z',
 };
 
-/**
- * SVG-іконка.
- * @param {object} props - властивості.
- * @param {keyof typeof PATHS} props.name - назва іконки.
- * @param {number} [props.size=20] - розмір у пікселях.
- * @param {boolean} [props.outline=false] - лише контур (напр. незаповнене сердечко).
- * @param {string} [props.className] - CSS-клас.
- * @returns {JSX.Element} елемент `<svg>`.
- */
 export default function Icon({ name, size = 20, outline = false, className }) {
   return (
     <svg

@@ -1,31 +1,11 @@
-/**
- * @module components/Sidebar
- * @description Бічне меню (рис. 4.2–4.5 ТЗ): логотип, навігація і блок користувача.
- * Пункт «Медіатека» бачать лише авторизовані, «Адмін-панель» — лише адміністратор
- * (на сервері ці розділи додатково захищені). На телефоні меню висувне: його відкриває кнопка
- * у верхній панелі (Layout), а вибір пункту меню закриває його.
- */
-
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
 import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
 
-/**
- * Обчислює CSS-клас пункту меню з урахуванням активного стану.
- * @param {{isActive: boolean}} state - стан посилання від NavLink.
- * @returns {string} CSS-клас.
- */
 const navLinkClass = ({ isActive }) => (isActive ? 'nav__link nav__link--active' : 'nav__link');
 
-/**
- * Бічне меню застосунку.
- * @param {object} props - властивості.
- * @param {string} props.id - id елемента (на нього посилається кнопка меню через aria-controls).
- * @param {() => void} props.onNavigate - вибрано пункт меню (закриває висувне меню на телефоні).
- * @returns {JSX.Element} розмітка меню.
- */
 export default function Sidebar({ id, onNavigate }) {
   const { t } = useTranslation();
   const { user, isAuthenticated, isAdmin, logout } = useAuth();

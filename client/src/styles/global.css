@@ -1,5 +1,3 @@
-/* Глобальні стилі: скидання відступів, шрифт, базові елементи. Кольори — з theme.css. */
-
 @import './theme.css';
 @import './layout.css';
 @import './player.css';
@@ -51,7 +49,6 @@ button {
   outline-offset: 2px;
 }
 
-/* Головна кнопка: градієнт «Захід сонця». */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -67,7 +64,6 @@ button {
   cursor: pointer;
 }
 
-/* Другорядна кнопка: прозорий кораловий фон, коралова обводка й текст. */
 .btn-secondary {
   display: inline-flex;
   align-items: center;

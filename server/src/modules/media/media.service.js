@@ -1,11 +1,3 @@
-/**
- * @module modules/media/media.service
- * @description Бізнес-логіка Media Service: пошук треків і їхні метадані, посилання для
- * відтворення, облік прослуховувань; керування медіатекою адміністратором —
- * завантаження аудіо в AWS S3 разом із метаданими (UC-9), модерація метаданих (UC-6),
- * видалення треку разом із файлом.
- */
-
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import config from '../../config/index.js';
@@ -15,33 +7,16 @@ import s3 from '../../services/s3.js';
 import AppError from '../../utils/AppError.js';
 import * as repository from './media.repository.js';
 
-/** Префікс ключів аудіофайлів у бакеті S3. */
 const TRACKS_PREFIX = 'tracks/';
 
-/**
- * Створює помилку «трек не знайдено».
- * @returns {AppError} 404 TRACK_NOT_FOUND.
- */
 function trackNotFound() {
   return new AppError(404, 'TRACK_NOT_FOUND', 'Трек не знайдено');
 }
 
-/**
- * Записує збій сховища S3 у журнал сервера (без ключів доступу — лише назва й текст помилки).
- * @param {Error} err - помилка AWS SDK.
- * @param {string} action - що саме не вдалося.
- * @returns {void}
- */
 function logStorageError(err, action) {
   if (!config.isTest) console.error(`S3: не вдалося ${action}:`, err.name, err.message);
 }
 
-/**
- * Повідомляє про збій сховища S3: подробиці — в журнал сервера, клієнту — загальне повідомлення.
- * @param {Error} err - помилка AWS SDK.
- * @param {string} action - що саме не вдалося (для журналу).
- * @returns {AppError} 500 STORAGE_ERROR.
- */
 function storageError(err, action) {
   logStorageError(err, action);
   return new AppError(
@@ -51,12 +26,7 @@ function storageError(err, action) {
   );
 }
 
-/**
- * Залишає лише поля треку, які можна показувати будь-якому користувачу (без s3_key).
- * @param {object} track - рядок таблиці track.
- * @returns {{id: string, title: string, artist: string, genre: string, bpm: number,
- *   key_signature: string, mood: string, year: number, play_count: number}} публічні дані треку.
- */
+//поля треку, які можна показувати будь-якому користувачу (без s3_key)
 export function toPublicTrack(track) {
   return {
     id: track.id,
@@ -71,36 +41,18 @@ export function toPublicTrack(track) {
   };
 }
 
-/**
- * Шукає треки за назвою, виконавцем або жанром (UC-3, FR-4).
- * @param {{q?: string, genre?: string, limit: number, offset: number}} params - пошуковий запит,
- *   фільтр жанру (хоча б одне з двох перевірено на рівні маршруту) і пагінація.
- * @returns {Promise<{tracks: object[], total: number, limit: number, offset: number}>} сторінка результатів.
- */
 export async function searchTracks({ q, genre, limit, offset }) {
   const { tracks, total } = await repository.searchTracks({ q, genre, limit, offset });
   return { tracks, total, limit, offset };
 }
 
-/**
- * Повертає метадані треку.
- * @param {string} id - UUID треку.
- * @returns {Promise<object>} публічні дані треку.
- * @throws {AppError} 404 TRACK_NOT_FOUND.
- */
 export async function getTrack(id) {
   const track = await repository.findTrackById(id);
   if (!track) throw trackNotFound();
   return toPublicTrack(track);
 }
 
-/**
- * Видає тимчасове посилання для відтворення треку (UC-7). Бакет приватний, тому браузер
- * отримує файл лише за pre-signed URL, дійсним S3_PRESIGN_TTL секунд (за замовчуванням 60 хв).
- * @param {string} id - UUID треку.
- * @returns {Promise<{url: string, expiresIn: number}>} посилання і строк його дії, секунд.
- * @throws {AppError} 404 TRACK_NOT_FOUND; 500 STORAGE_ERROR, якщо посилання не вдалося створити.
- */
+//бакет приватний, тому браузер отримує файл лише за тимчасовим pre-signed URL
 export async function getStreamUrl(id) {
   const track = await repository.findTrackById(id);
   if (!track) throw trackNotFound();
@@ -113,15 +65,7 @@ export async function getStreamUrl(id) {
   }
 }
 
-/**
- * Фіксує початок відтворення треку в одній транзакції: `play_count + 1` і, якщо користувач
- * авторизований, запис в user_listen_history (дані для Recommendation Engine).
- * Якщо будь-який крок не вдався, жодна зі змін не зберігається.
- * @param {string} trackId - UUID треку.
- * @param {string} [userId] - UUID авторизованого користувача (для гостя — undefined).
- * @returns {Promise<{id: string, play_count: number}>} нове значення лічильника відтворень.
- * @throws {AppError} 404 TRACK_NOT_FOUND.
- */
+//play_count + 1 і запис в user_listen_history (для гостя — без нього) атомарно, в одній транзакції
 export async function registerPlay(trackId, userId) {
   return transaction(async (client) => {
     const playCount = await repository.incrementPlayCount(client, trackId);
@@ -131,27 +75,13 @@ export async function registerPlay(trackId, userId) {
   });
 }
 
-/**
- * Повертає сторінку списку треків для адмін-панелі (з ключами файлів у S3).
- * @param {{q?: string, limit: number, offset: number}} params - пошук за ID або назвою, пагінація.
- * @returns {Promise<{tracks: object[], total: number, limit: number, offset: number}>} сторінка списку.
- */
 export async function listTracksForAdmin({ q, limit, offset }) {
   const { tracks, total } = await repository.listTracksForAdmin({ q, limit, offset });
   return { tracks, total, limit, offset };
 }
 
-/**
- * Додає трек до медіатеки (UC-9): спочатку завантажує файл у S3 під ключем
- * `tracks/<uuid>.<розширення>`, потім створює запис у БД з тим самим UUID.
- * Якщо запис створити не вдалося, файл видаляється з S3 (компенсувальна дія, що
- * відповідає «скасуванню транзакції» з UC-9) — у бакеті не лишається файлів без запису.
- * @param {object} metadata - перевірені метадані: title, artist, genre, bpm, key_signature, mood, year.
- * @param {{originalname: string, buffer: Buffer}} file - перевірений аудіофайл (MP3 або WAV).
- * @returns {Promise<object>} створений трек (з s3_key).
- * @throws {AppError} 500 STORAGE_ERROR, якщо файл не вдалося зберегти в S3.
- * @throws {Error} помилка БД (після видалення файлу з S3).
- */
+/*спершу файл у S3, потім запис у БД; якщо запис не створено, файл видаляється з S3
+(компенсація замість «скасування транзакції» UC-9), щоб у бакеті не лишалося файлів без запису*/
 export async function createTrack(metadata, file) {
   const id = randomUUID();
   const extension = path.extname(file.originalname).toLowerCase();
@@ -177,27 +107,14 @@ export async function createTrack(metadata, file) {
   }
 }
 
-/**
- * Змінює метадані треку (модерація, UC-6). Кешу векторів немає, тому зміни одразу
- * враховуються в пошуку й рекомендаціях.
- * @param {string} id - UUID треку.
- * @param {object} metadata - перевірені метадані: title, artist, genre, bpm, key_signature, mood, year.
- * @returns {Promise<object>} оновлений трек (з s3_key).
- * @throws {AppError} 404 TRACK_NOT_FOUND.
- */
+//кешу векторів немає, тож зміни одразу враховуються в пошуку й рекомендаціях
 export async function updateTrack(id, metadata) {
   const track = await repository.updateTrack(id, metadata);
   if (!track) throw trackNotFound();
   return track;
 }
 
-/**
- * Видаляє трек разом з аудіофайлом. Запис видаляється в транзакції, а файл з S3 — до її
- * підтвердження: якщо S3 недоступний, транзакція відкочується і трек лишається в медіатеці.
- * @param {string} id - UUID треку.
- * @returns {Promise<void>}
- * @throws {AppError} 404 TRACK_NOT_FOUND; 500 STORAGE_ERROR, якщо файл не вдалося видалити.
- */
+//файл з S3 видаляється до COMMIT: якщо S3 недоступний, транзакція відкочується і трек лишається
 export async function deleteTrack(id) {
   await transaction(async (client) => {
     const key = await repository.deleteTrack(client, id);

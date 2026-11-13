@@ -1,23 +1,11 @@
-/**
- * @module services/mailer
- * @description Надсилання електронних листів через nodemailer (SMTP з .env).
- * Якщо SMTP_HOST не задано (режим розробки), лист не надсилається, а його текст
- * виводиться в консоль сервера — так посилання для відновлення пароля можна відкрити вручну.
- */
-
 import nodemailer from 'nodemailer';
 import config from '../config/index.js';
 
-/** Стандартний порт SMTP із шифруванням TLS від початку з'єднання. */
+//порт SMTP із TLS від початку з'єднання
 const SMTPS_PORT = 465;
 
-/** @type {import('nodemailer').Transporter|undefined} */
 let transporter;
 
-/**
- * Повертає (і за потреби створює) SMTP-транспорт.
- * @returns {import('nodemailer').Transporter|null} транспорт або null, якщо SMTP не налаштовано.
- */
 function getTransporter() {
   if (!config.smtp.host) return null;
   transporter ??= nodemailer.createTransport({
@@ -29,13 +17,7 @@ function getTransporter() {
   return transporter;
 }
 
-/**
- * Надсилає лист (текстова й HTML-версії) або, без SMTP, виводить у консоль лише текстову.
- * @param {{to: string, subject: string, text: string, html?: string}} message - адресат,
- *   тема, текст і необов'язкова HTML-версія листа.
- * @returns {Promise<void>}
- * @throws {Error} якщо SMTP-сервер відхилив лист.
- */
+//без SMTP_HOST (розробка) лист виводиться в консоль, щоб посилання можна було відкрити вручну
 async function sendMail({ to, subject, text, html }) {
   const smtp = getTransporter();
   if (!smtp) {
@@ -47,7 +29,6 @@ async function sendMail({ to, subject, text, html }) {
   await smtp.sendMail({ from: config.smtp.from, to, subject, text, html });
 }
 
-/** Символи, які треба екранувати в HTML (і в тексті, і в значеннях атрибутів). */
 const HTML_ESCAPES = Object.freeze({
   '&': '&amp;',
   '<': '&lt;',
@@ -56,30 +37,17 @@ const HTML_ESCAPES = Object.freeze({
   "'": '&#39;',
 });
 
-/**
- * Екранує спецсимволи HTML (`& < > " '`), щоб введені користувачем дані
- * (ім'я) не могли змінити розмітку листа.
- * @param {string} value - довільний рядок.
- * @returns {string} рядок, безпечний для вставлення в HTML-текст або атрибут.
- */
+//екранування, щоб введене користувачем ім'я не могло змінити розмітку листа
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 }
 
-/** Тема листа для відновлення пароля. */
 const RESET_SUBJECT = 'MusicLibrary: відновлення пароля';
 
-/** Системні шрифти листа (зовнішні шрифти в листах не підключаються). */
+//поштові клієнти не підключають зовнішні шрифти
 const FONT_STACK = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
 
-/**
- * Формує лист із посиланням для відновлення пароля: тему, текстову версію і
- * самодостатню HTML-версію (таблична верстка, лише вбудовані стилі, без зовнішніх
- * ресурсів і скриптів) у кольорах інтерфейсу застосунку.
- * Чиста функція — не надсилає лист і не звертається до конфігурації.
- * @param {{username: string, link: string}} data - ім'я користувача і посилання для відновлення.
- * @returns {{subject: string, text: string, html: string}} тема, текст і HTML листа.
- */
+//таблична верстка й лише вбудовані стилі — так лист однаково виглядає в поштових клієнтах
 export function buildPasswordResetEmail({ username, link }) {
   const text = [
     `Вітаємо, ${username}!`,
@@ -142,17 +110,11 @@ export function buildPasswordResetEmail({ username, link }) {
   return { subject: RESET_SUBJECT, text, html };
 }
 
-/**
- * Надсилає лист із посиланням для відновлення пароля.
- * @param {{to: string, username: string, link: string}} data - адресат, ім'я, посилання.
- * @returns {Promise<void>}
- * @throws {Error} якщо лист не вдалося надіслати.
- */
 async function sendPasswordResetEmail({ to, username, link }) {
   await sendMail({ to, ...buildPasswordResetEmail({ username, link }) });
 }
 
-/** Поштовий сервіс (об'єкт, щоб у тестах можна було підмінити надсилання). */
+//об'єкт, щоб у тестах можна було підмінити надсилання
 const mailer = { sendPasswordResetEmail };
 
 export default mailer;

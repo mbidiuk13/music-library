@@ -1,11 +1,3 @@
-/**
- * @module pages/RegisterPage
- * @description Сторінка реєстрації (UC-1, маршрут `/register`): пошта, ім'я, пароль і повтор
- * пароля. Поки дані некоректні, кнопка неактивна, а поле з помилкою підсвічується
- * червоним. Після успішної реєстрації — toast-сповіщення і перехід на сторінку входу
- * (пошта вже підставлена у форму).
- */
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +14,6 @@ import {
   validateUsername,
 } from '../utils/validation.js';
 
-/** Початкові значення полів форми. */
 const INITIAL_VALUES = Object.freeze({
   email: '',
   username: '',
@@ -30,11 +21,6 @@ const INITIAL_VALUES = Object.freeze({
   passwordConfirm: '',
 });
 
-/**
- * Валідація форми реєстрації — ті самі правила, що й у `POST /api/auth/register`.
- * @param {typeof INITIAL_VALUES} values - значення полів.
- * @returns {Record<string, string|null>} ключі i18n помилок полів.
- */
 function validateRegistration(values) {
   return {
     email: validateEmail(values.email),
@@ -44,10 +30,6 @@ function validateRegistration(values) {
   };
 }
 
-/**
- * Сторінка реєстрації.
- * @returns {JSX.Element} сторінка.
- */
 export default function RegisterPage() {
   const { t } = useTranslation();
   const { register } = useAuth();
@@ -58,11 +40,6 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState(/** @type {string|null} */ (null));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /**
-   * Надсилає форму. Зайнятий email (409) показується під полем «Електронна пошта».
-   * @param {import('react').FormEvent<HTMLFormElement>} event - подія надсилання.
-   * @returns {Promise<void>}
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     touchAll();

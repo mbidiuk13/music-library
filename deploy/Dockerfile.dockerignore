@@ -1,5 +1,4 @@
-# Контекст збірки deploy/Dockerfile: до образу потрапляє лише перелічене нижче
-# (без .env, node_modules, client/dist, server/media і документів).
+#білий список: .env, node_modules, client/dist і server/media до образу не потрапляють
 *
 !package.json
 !package-lock.json

@@ -1,10 +1,3 @@
-/**
- * @module modules/auth/auth.service
- * @description Бізнес-логіка Auth Controller: реєстрація (UC-1), вхід (UC-2),
- * отримання поточного користувача, відновлення пароля через посилання в листі. Паролі зберігаються лише як bcrypt-хеш
- * (saltRounds = 10) і ніколи не повертаються в API та не логуються.
- */
-
 import bcrypt from 'bcrypt';
 import config from '../../config/index.js';
 import { transaction } from '../../db/pool.js';
@@ -18,34 +11,19 @@ import {
 } from '../../utils/jwt.js';
 import * as repository from './auth.repository.js';
 
-/** Код помилки PostgreSQL «порушення унікальності» (unique_violation). */
 const UNIQUE_VIOLATION = '23505';
 
-/** Формат UUID (ідентифікатор користувача з токена перевіряється перед запитом до БД). */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Хеш-заглушка для входу з неіснуючим email: bcrypt.compare виконується завжди,
- * тож за часом відповіді не можна визначити, чи зареєстровано адресу.
- */
+/*bcrypt.compare виконується завжди, навіть для неіснуючого email, щоб за часом відповіді
+не можна було визначити, чи зареєстровано адресу*/
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync('timing-equalizer-password', config.bcryptSaltRounds);
 
-/**
- * Залишає лише ті поля користувача, які можна передати клієнту.
- * @param {{id: string, email: string, username: string, role: string}} user - рядок таблиці users.
- * @returns {{id: string, email: string, username: string, role: string}} публічні дані.
- */
 export function toPublicUser(user) {
   return { id: user.id, email: user.email, username: user.username, role: user.role };
 }
 
-/**
- * Реєструє користувача: в одній транзакції створює запис у users і плейлист «Улюблені».
- * Якщо будь-який крок не вдався, жодних змін у БД не залишається.
- * @param {{email: string, username: string, password: string}} data - перевірені дані форми.
- * @returns {Promise<{token: string, user: object}>} токен доступу і публічні дані користувача.
- * @throws {AppError} 409 EMAIL_TAKEN, якщо email уже зареєстровано.
- */
+//користувач і плейлист «Улюблені» створюються в одній транзакції
 export async function register({ email, username, password }) {
   const passwordHash = await bcrypt.hash(password, config.bcryptSaltRounds);
 
@@ -70,13 +48,7 @@ export async function register({ email, username, password }) {
   return { token: signAccessToken(user), user: toPublicUser(user) };
 }
 
-/**
- * Автентифікує користувача за email і паролем.
- * Для неіснуючого email і хибного пароля повертається однакова помилка.
- * @param {{email: string, password: string}} credentials - email (у нижньому регістрі) і пароль.
- * @returns {Promise<{token: string, user: object}>} токен доступу і публічні дані користувача.
- * @throws {AppError} 401 INVALID_CREDENTIALS «Невірний логін або пароль».
- */
+//для неіснуючого email і хибного пароля — однакова помилка
 export async function login({ email, password }) {
   const user = await repository.findUserByEmail(email);
   const passwordMatches = await bcrypt.compare(
@@ -89,12 +61,6 @@ export async function login({ email, password }) {
   return { token: signAccessToken(user), user: toPublicUser(user) };
 }
 
-/**
- * Повертає актуальні дані поточного користувача (відновлення сесії після перезавантаження).
- * @param {string} userId - UUID із токена.
- * @returns {Promise<object>} публічні дані користувача.
- * @throws {AppError} 401 INVALID_TOKEN, якщо користувача вже не існує.
- */
 export async function getCurrentUser(userId) {
   const user = await repository.findUserById(userId);
   if (!user) {
@@ -107,10 +73,6 @@ export async function getCurrentUser(userId) {
   return toPublicUser(user);
 }
 
-/**
- * Створює помилку «недійсне посилання для відновлення пароля».
- * @returns {AppError} 400 INVALID_RESET_TOKEN.
- */
 function invalidResetToken() {
   return new AppError(
     400,
@@ -119,14 +81,8 @@ function invalidResetToken() {
   );
 }
 
-/**
- * Надсилає лист із посиланням `${CLIENT_URL}/reset-password?token=…`, якщо email зареєстровано.
- * Для незареєстрованого email нічого не робить, а відповідь сервера однакова в обох випадках,
- * тож за нею не можна дізнатися, чи існує обліковий запис. Лист надсилається у фоні,
- * щоб час відповіді не залежав від роботи поштового сервера.
- * @param {string} email - email у нижньому регістрі.
- * @returns {Promise<void>}
- */
+/*для незареєстрованого email нічого не робить, щоб відповідь не розкривала існування акаунта.
+Лист іде у фоні, щоб час відповіді не залежав від поштового сервера*/
 export async function requestPasswordReset(email) {
   const user = await repository.findUserByEmail(email);
   if (!user) return;
@@ -140,15 +96,6 @@ export async function requestPasswordReset(email) {
     );
 }
 
-/**
- * Знаходить користувача, якому належить токен відновлення пароля, і перевіряє токен:
- * формат, ідентифікатор користувача, підпис (секрет + поточний хеш пароля) і строк дії.
- * Дані в БД не змінює.
- * @param {string} token - токен із посилання в листі.
- * @returns {Promise<object>} рядок таблиці users власника токена.
- * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен пошкоджений, прострочений, належить
- *   неіснуючому користувачу або вже використаний.
- */
 async function findResetTokenOwner(token) {
   const userId = readTokenSubject(token);
   if (!userId || !UUID_PATTERN.test(userId)) throw invalidResetToken();
@@ -163,23 +110,11 @@ async function findResetTokenOwner(token) {
   return user;
 }
 
-/**
- * Перевіряє посилання для відновлення пароля ще до показу форми (сторінка `/reset-password`).
- * @param {string} token - токен із посилання в листі.
- * @returns {Promise<void>}
- * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен недійсний, прострочений або вже використаний.
- */
 export async function verifyResetToken(token) {
   await findResetTokenOwner(token);
 }
 
-/**
- * Встановлює новий пароль за токеном із листа. Токен одноразовий: після зміни пароля
- * змінюється хеш, яким він підписаний.
- * @param {{token: string, password: string}} data - токен і новий (перевірений) пароль.
- * @returns {Promise<void>}
- * @throws {AppError} 400 INVALID_RESET_TOKEN, якщо токен недійсний, прострочений або вже використаний.
- */
+//токен одноразовий: після зміни пароля змінюється хеш, яким він підписаний
 export async function resetPassword({ token, password }) {
   const user = await findResetTokenOwner(token);
 

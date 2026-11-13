@@ -1,10 +1,3 @@
-/**
- * @file Кореневий компонент застосунку: маршрути SPA (розділ 9 SPEC).
- * Провайдери автентифікації й плеєра розташовані вище (main.jsx), тому зміна
- * маршруту не перериває відтворення музики. Якщо сесію не вдалося відновити (немає зв'язку
- * із сервером), замість сторінок показується помилка з кнопкою «Спробувати ще раз».
- */
-
 import { Route, Routes } from 'react-router-dom';
 import AuthLayout from './components/AuthLayout.jsx';
 import Layout from './components/Layout.jsx';
@@ -22,10 +15,6 @@ import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 import WelcomePage from './pages/WelcomePage.jsx';
 
-/**
- * Кореневий компонент: описує маршрути SPA.
- * @returns {JSX.Element} дерево маршрутів або екран помилки відновлення сесії.
- */
 export default function App() {
   const { status, sessionError, retrySession } = useAuth();
 

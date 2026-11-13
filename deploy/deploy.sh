@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
-#
-# Розгортання MusicLibrary на сервері Ubuntu 22.04+ (ТЗ 4.4: від 2 CPU / 4 GB RAM / 20 GB SSD).
-#
-# Що робить:
-#   1) встановлює Docker (з Compose), nginx і certbot, якщо їх ще немає;
-#   2) оновлює код з GitHub (git pull);
-#   3) збирає образ і запускає контейнери app + postgres (deploy/docker-compose.prod.yml);
-#   4) під час першого розгортання (у БД ще немає таблиць) — створює схему (migrate),
-#      заповнює медіатеку (seed), створює адміністратора (seed:admin) і, якщо в server/media/
-#      є mp3, завантажує їх у S3 (import:tracks);
-#   5) отримує сертифікат Let's Encrypt і налаштовує nginx (HTTPS + reverse proxy).
-#
-# Запуск з кореня клону репозиторію (файл .env уже заповнено, DNS-запис домену вказує на сервер):
-#   sudo DOMAIN=music.example.com LETSENCRYPT_EMAIL=you@example.com ./deploy/deploy.sh
+#запуск з кореня клону (.env заповнено, DNS домену вказує на сервер):
+#sudo DOMAIN=music.example.com LETSENCRYPT_EMAIL=you@example.com ./deploy/deploy.sh
 
 set -euo pipefail
 
@@ -37,7 +25,6 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-# --- 1. Системні пакети ---
 if ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1; then
   log "Встановлення Docker"
   apt-get update
@@ -52,7 +39,6 @@ if ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1; t
   systemctl enable --now nginx
 fi
 
-# --- 2. Оновлення коду ---
 log "Оновлення коду (git pull)"
 if [[ -n "${SUDO_USER:-}" ]]; then
   sudo -u "$SUDO_USER" git pull --ff-only
@@ -60,12 +46,11 @@ else
   git pull --ff-only
 fi
 
-# --- 3. Збірка і запуск контейнерів ---
 log "Збірка образу і запуск контейнерів"
 "${COMPOSE[@]}" up -d --build --remove-orphans
 
-# --- 4. Ініціалізація БД (лише перше розгортання) ---
-# shellcheck disable=SC2016  # змінні розкриваються всередині контейнера postgres
+#БД ініціалізується лише при першому розгортанні (таблиці users ще немає).
+#shellcheck disable=SC2016  # змінні розкриваються всередині контейнера postgres
 schema_exists="$("${COMPOSE[@]}" exec -T postgres sh -c \
   'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT to_regclass('"'"'public.users'"'"') IS NOT NULL"')"
 
@@ -84,11 +69,9 @@ else
   log "Схема БД уже існує — ініціалізацію пропущено"
 fi
 
-# --- 5. HTTPS і nginx ---
 if [[ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]]; then
   log "Отримання сертифіката Let's Encrypt для $DOMAIN"
-  # standalone: certbot сам відповідає на перевірку на порту 80, тому nginx на цей час зупиняється.
-  # Хуки зберігаються в налаштуваннях certbot і так само спрацьовують під час автопоновлення.
+  #standalone займає порт 80, тому nginx на цей час зупиняється; хуки діють і при автопоновленні
   certbot certonly --standalone --non-interactive --agree-tos \
     -m "$LETSENCRYPT_EMAIL" -d "$DOMAIN" \
     --pre-hook "systemctl stop nginx" --post-hook "systemctl start nginx"

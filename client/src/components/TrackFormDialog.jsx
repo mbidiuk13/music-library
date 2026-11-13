@@ -1,12 +1,3 @@
-/**
- * @module components/TrackFormDialog
- * @description Форма треку в адмін-панелі (рис. 4.5 ТЗ): завантаження аудіо з метаданими (UC-9)
- * і модерація метаданих наявного треку (UC-6). Сім полів метаданих — назва, виконавець, жанр,
- * тональність, настрій, темп і рік; жанр, тональність і настрій обираються зі словників
- * `GET /api/meta/vocabularies`. Аудіофайл перевіряється ще на клієнті (лише MP3/WAV, до 50 МБ),
- * а сервер додатково перевіряє MIME-тип, вміст файлу й усі поля.
- */
-
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchVocabularies } from '../api/tracks.js';
@@ -26,17 +17,10 @@ import Modal from './Modal.jsx';
 import { RequestError, TrackListSkeleton } from './RequestState.jsx';
 import SelectField from './SelectField.jsx';
 
-/** Коди помилок сервера, що стосуються саме аудіофайлу (показуються під полем файлу). */
 const FILE_ERROR_CODES = new Set(['FILE_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE', 'INVALID_UPLOAD']);
 
-/** Кількість байтів в одному мегабайті (для показу розміру файлу). */
 const BYTES_IN_MB = 1024 * 1024;
 
-/**
- * Початкові значення полів: порожні для нового треку або поточні метадані для редагування.
- * @param {object|null} track - трек для редагування.
- * @returns {Record<string, string>} значення полів форми (рядки).
- */
 function initialValuesFor(track) {
   return {
     title: track?.title ?? '',
@@ -49,16 +33,6 @@ function initialValuesFor(track) {
   };
 }
 
-/**
- * Форма метаданих (показується, коли словники вже завантажено).
- * @param {object} props - властивості.
- * @param {{genres: string[], moods: string[], keys: string[]}} props.vocabularies - словники.
- * @param {object|null} props.track - трек для редагування або null для завантаження нового.
- * @param {(payload: FormData|object) => Promise<void>} props.onSubmit - збереження.
- * @param {() => void} props.onClose - закриття без змін.
- * @param {(busy: boolean) => void} props.onBusyChange - повідомляє, що виконується запит.
- * @returns {JSX.Element} форма.
- */
 function TrackForm({ vocabularies, track, onSubmit, onClose, onBusyChange }) {
   const { t } = useTranslation();
   const isEdit = Boolean(track);
@@ -90,23 +64,12 @@ function TrackForm({ vocabularies, track, onSubmit, onClose, onBusyChange }) {
     fileServerError ?? (fileTouched && fileErrorKey ? t(fileErrorKey, LIMITS) : null);
   const canSubmit = isValid && !fileErrorKey && !isBusy;
 
-  /**
-   * Вибір аудіофайлу: перевірка розширення й розміру одразу, без надсилання на сервер.
-   * @param {import('react').ChangeEvent<HTMLInputElement>} event - подія зміни поля файлу.
-   * @returns {void}
-   */
   const handleFileChange = (event) => {
     setFile(event.target.files?.[0] ?? null);
     setFileTouched(true);
     setFileServerError(null);
   };
 
-  /**
-   * Надсилає форму. Помилки файлу (413, 415) показуються під полем файлу, помилки полів
-   * (400 VALIDATION_ERROR) — під відповідними полями, решта — над кнопками.
-   * @param {import('react').FormEvent<HTMLFormElement>} event - подія надсилання.
-   * @returns {Promise<void>}
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     touchAll();
@@ -288,14 +251,6 @@ function TrackForm({ vocabularies, track, onSubmit, onClose, onBusyChange }) {
   );
 }
 
-/**
- * Вікно форми треку.
- * @param {object} props - властивості.
- * @param {object|null} props.track - трек для редагування або null для завантаження нового.
- * @param {(payload: FormData|object) => Promise<void>} props.onSubmit - збереження (кидає ApiError).
- * @param {() => void} props.onClose - закриття вікна.
- * @returns {JSX.Element} модальне вікно.
- */
 export default function TrackFormDialog({ track, onSubmit, onClose }) {
   const { t } = useTranslation();
   const { data, error, isLoading, reload } = useRequest(fetchVocabularies);

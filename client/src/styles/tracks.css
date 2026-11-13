@@ -1,5 +1,3 @@
-/* Списки й картки треків (рис. 4.2–4.3 ТЗ), заголовки секцій і стани запитів. */
-
 .page--home {
   display: flex;
   flex-direction: column;
@@ -19,7 +17,6 @@
   color: var(--muted);
 }
 
-/* ---------- Картки «Підібрано для вас» ---------- */
 .card-row {
   display: grid;
   grid-auto-columns: minmax(160px, 1fr);
@@ -126,9 +123,8 @@
   font-weight: 700;
 }
 
-/* ---------- Список треків ---------- */
 .track-table {
-  /* Ширина колонки дій: ♥ і «Додати до плейлиста» (у плейлисті — ще «Прибрати»). */
+  /*ширина колонки дій: ♥ і «Додати до плейлиста» (у плейлисті — ще «Прибрати»)*/
   --track-actions-width: 80px;
 }
 
@@ -221,7 +217,6 @@
   gap: 4px;
 }
 
-/* ---------- Стани запитів ---------- */
 .skeleton-list {
   display: flex;
   flex-direction: column;
@@ -307,7 +302,6 @@
   }
 }
 
-/* ---------- Пошук (рис. 4.3) ---------- */
 .page--search {
   display: flex;
   flex-direction: column;
@@ -358,7 +352,7 @@
   outline: none;
 }
 
-/* Фокус показує рамка всього рядка пошуку (.search-box:focus-within). */
+/*фокус показує рамка всього рядка пошуку (.search-box:focus-within)*/
 .search-box__input:focus-visible {
   outline: none;
 }
@@ -367,7 +361,7 @@
   color: var(--muted);
 }
 
-/* Стандартний хрестик браузера замінено власною кнопкою. */
+/*стандартний хрестик браузера замінено власною кнопкою*/
 .search-box__input::-webkit-search-cancel-button {
   display: none;
 }
@@ -399,7 +393,7 @@
   transition: transform 0.15s;
 }
 
-/* Декоративний повернутий квадрат у правому нижньому куті (як на макеті). */
+/*декоративний повернутий квадрат у правому нижньому куті (як на макеті)*/
 .genre-tile::after {
   position: absolute;
   right: -30px;

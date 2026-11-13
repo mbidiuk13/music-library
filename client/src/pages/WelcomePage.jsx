@@ -1,11 +1,3 @@
-/**
- * @module pages/WelcomePage
- * @description Сторінка привітання з формою входу (рис. 4.1 ТЗ, UC-2, маршрут `/welcome`):
- * пошта, пароль, «Забули пароль?», «Створити акаунт», «Продовжити без входу».
- * Після успішного входу маршрут GuestOnly переводить користувача на головну
- * (або на сторінку, з якої його перенаправили на вхід).
- */
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -17,12 +9,7 @@ import { errorMessage } from '../utils/errors.js';
 import { emailState } from '../utils/navigation.js';
 import { validateRequired } from '../utils/validation.js';
 
-/**
- * Валідація форми входу — ті самі правила, що й на сервері (`POST /api/auth/login`):
- * обидва поля обов'язкові. Вимоги до надійності пароля під час входу не перевіряються.
- * @param {{email: string, password: string}} values - значення полів.
- * @returns {{email: string|null, password: string|null}} ключі i18n помилок.
- */
+//вимоги до надійності пароля під час входу не перевіряються — лише обов'язковість полів
 function validateLogin({ email, password }) {
   return {
     email: validateRequired(email, 'validation.email.required'),
@@ -30,10 +17,6 @@ function validateLogin({ email, password }) {
   };
 }
 
-/**
- * Сторінка привітання з формою входу.
- * @returns {JSX.Element} сторінка.
- */
 export default function WelcomePage() {
   const { t } = useTranslation();
   const { login } = useAuth();
@@ -44,11 +27,6 @@ export default function WelcomePage() {
   const [formError, setFormError] = useState(/** @type {string|null} */ (null));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /**
-   * Надсилає форму входу. Помилку «Невірний логін або пароль» показує над кнопкою.
-   * @param {import('react').FormEvent<HTMLFormElement>} event - подія надсилання.
-   * @returns {Promise<void>}
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     touchAll();
@@ -57,7 +35,7 @@ export default function WelcomePage() {
     setIsSubmitting(true);
     try {
       await login({ email: values.email.trim(), password: values.password });
-      // Перехід після входу виконує GuestOnly, коли сесія збережена.
+      //перехід після входу виконує GuestOnly, коли сесія збережена
     } catch (err) {
       setServerErrors(err.details);
       setFormError(errorMessage(err));

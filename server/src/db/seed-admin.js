@@ -1,21 +1,9 @@
-/**
- * @module db/seed-admin
- * @description Скрипт `npm run seed:admin`: створює обліковий запис адміністратора
- * з ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_USERNAME у .env разом з його плейлистом «Улюблені»
- * (однією транзакцією, як при реєстрації). Пароль зберігається лише як bcrypt-хеш.
- * Повторний запуск оновлює ім'я, пароль і роль наявного запису з тим самим email.
- */
-
+//повторний запуск оновлює ім'я, пароль і роль наявного запису з тим самим email
 import bcrypt from 'bcrypt';
 import config from '../config/index.js';
 import { transaction } from './pool.js';
 import { runDbScript } from './sqlFile.js';
 
-/**
- * Створює або оновлює адміністратора та гарантує наявність його плейлиста «Улюблені».
- * @returns {Promise<void>}
- * @throws {Error} якщо ADMIN_EMAIL або ADMIN_PASSWORD не задано в .env.
- */
 async function seedAdmin() {
   const { email, password, username } = config.admin;
   if (!email || !password) {

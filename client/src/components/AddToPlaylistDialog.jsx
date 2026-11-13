@@ -1,15 +1,3 @@
-/**
- * @module components/AddToPlaylistDialog
- * @description Дія «Додати до плейлиста» (UC-4, FR-10, BPMN рис. 1.4): вікно зі списком плейлистів
- * користувача і формою «Новий плейлист». Вибір наявного плейлиста додає до нього трек
- * (`POST /api/playlists/:id/tracks`); створення нового плейлиста одразу з цим треком виконується
- * одним запитом в одній транзакції (`POST /api/playlists/with-track`). Список плейлистів
- * завантажується разом з ознакою `hasTrack` (`GET /api/playlists?trackId=`), тож плейлисти, де трек
- * уже є, одразу позначені «Уже є». Успіх показується toast-сповіщенням і позначкою «Додано» біля
- * плейлиста; помилки сервера (трек уже в плейлисті, назва зайнята) — зрозумілим текстом у вікні.
- * Вікно лишається відкритим, тож трек можна додати ще в кілька плейлистів.
- */
-
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addTrackToPlaylist, createPlaylistWithTrack, fetchPlaylists } from '../api/playlists.js';
@@ -25,37 +13,19 @@ import Icon from './Icon.jsx';
 import Modal from './Modal.jsx';
 import { RequestError, TrackListSkeleton } from './RequestState.jsx';
 
-/**
- * Валідація форми нового плейлиста.
- * @param {{title: string}} values - значення поля.
- * @returns {{title: string|null}} ключ i18n помилки.
- */
 function validateNewPlaylist(values) {
   return { title: validatePlaylistTitle(values.title) };
 }
 
-/** Початкові значення форми нового плейлиста. */
 const NEW_PLAYLIST_VALUES = Object.freeze({ title: '' });
 
-/**
- * Форма «Новий плейлист» з цим треком. Після успіху батьківський компонент перемонтовує її (key),
- * щоб очистити поле.
- * @param {object} props - властивості.
- * @param {(title: string) => Promise<void>} props.onCreate - створення плейлиста з треком.
- * @param {(busy: boolean) => void} props.onBusyChange - повідомляє, що виконується запит.
- * @returns {JSX.Element} форма.
- */
+//після успіху батьківський компонент перемонтовує форму (key), щоб очистити поле
 function NewPlaylistForm({ onCreate, onBusyChange }) {
   const { t } = useTranslation();
   const { values, isValid, handleChange, handleBlur, fieldError, setServerErrors, touchAll } =
     useForm(NEW_PLAYLIST_VALUES, validateNewPlaylist);
   const [isBusy, setIsBusy] = useState(false);
 
-  /**
-   * Надсилає форму. Зайнята назва (409) показується під полем.
-   * @param {import('react').FormEvent<HTMLFormElement>} event - подія надсилання.
-   * @returns {Promise<void>}
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     touchAll();
@@ -93,21 +63,11 @@ function NewPlaylistForm({ onCreate, onBusyChange }) {
   );
 }
 
-/**
- * Вікно «Додати до плейлиста».
- * @param {object} props - властивості.
- * @param {object} props.track - трек `{id, title, artist}`.
- * @param {() => void} props.onClose - закриття вікна.
- * @param {(playlist: object, info: {created: boolean}) => void} [props.onAdded] - трек додано
- *   до плейлиста (наприклад, щоб оновити лічильник на картці в медіатеці).
- * @returns {JSX.Element} модальне вікно.
- */
 export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
   const { t } = useTranslation();
   const { markFavorite } = useFavorites();
   const { showToast } = useToast();
-  // Плейлисти з ознакою hasTrack. Стан «сердечка» узгоджується з тим, чи є трек в «Улюблених»
-  // на сервері (його могли додати чи прибрати в іншій вкладці).
+  //сердечко узгоджується із сервером, трек могли додати в «Улюблені» чи прибрати в іншій вкладці
   const load = useMemo(
     () => async (signal) => {
       const result = await fetchPlaylists(signal, track.id);
@@ -129,28 +89,11 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
   const playlists = data ? [...data.playlists, ...created] : [];
   const isBusy = isCreating || Object.values(statuses).includes('busy');
 
-  /**
-   * Поточний стан плейлиста у списку: дія користувача в цьому вікні, інакше — «Уже є»,
-   * якщо сервер повідомив, що трек уже в плейлисті.
-   * @param {{id: string, hasTrack?: boolean}} playlist - плейлист.
-   * @returns {'busy'|'added'|'exists'|undefined} стан.
-   */
   const statusOf = (playlist) =>
     statuses[playlist.id] ?? (playlist.hasTrack ? 'exists' : undefined);
 
-  /**
-   * Змінює стан одного плейлиста у списку.
-   * @param {string} id - UUID плейлиста.
-   * @param {'busy'|'added'|'exists'|undefined} status - новий стан.
-   * @returns {void}
-   */
   const setStatus = (id, status) => setStatuses((prev) => ({ ...prev, [id]: status }));
 
-  /**
-   * Додає трек до наявного плейлиста. Якщо трек уже там (409), показує це замість помилки.
-   * @param {object} playlist - обраний плейлист.
-   * @returns {Promise<void>}
-   */
   const handleAdd = async (playlist) => {
     setStatus(playlist.id, 'busy');
     setMessage(null);
@@ -172,12 +115,6 @@ export default function AddToPlaylistDialog({ track, onClose, onAdded }) {
     }
   };
 
-  /**
-   * Створює новий плейлист з цим треком (одна транзакція на сервері).
-   * @param {string} title - назва нового плейлиста.
-   * @returns {Promise<void>}
-   * @throws {import('../api/client.js').ApiError} помилка сервера (показується під полем).
-   */
   const handleCreate = async (title) => {
     setMessage(null);
     const { playlist } = await createPlaylistWithTrack(title, track.id);

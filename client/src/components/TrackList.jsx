@@ -1,12 +1,3 @@
-/**
- * @module components/TrackList
- * @description Список треків (Топ-100 на рис. 4.2, результати пошуку на рис. 4.3, треки плейлиста
- * на рис. 4.4): номер, обкладинка, назва й виконавець, жанр, «Додати до плейлиста» і ♥ (лише
- * авторизованим) і кнопка Play.
- * Натискання Play відтворює трек через PlayerContext, а весь список стає чергою відтворення.
- * У варіанті для плейлиста є рядок заголовків, колонка «Додано» і дія «Прибрати з плейлиста».
- */
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -17,21 +8,6 @@ import AddToPlaylistDialog from './AddToPlaylistDialog.jsx';
 import FavoriteButton from './FavoriteButton.jsx';
 import Icon from './Icon.jsx';
 
-/**
- * Рядок списку треків.
- * @param {object} props - властивості.
- * @param {object} props.track - трек `{id, title, artist, genre, added_at?, …}`.
- * @param {number} props.position - порядковий номер (з 1).
- * @param {boolean} props.isCurrent - чи це поточний трек плеєра.
- * @param {boolean} props.isPlaying - чи грає зараз поточний трек.
- * @param {boolean} props.showFavorite - чи показувати сердечко.
- * @param {boolean} props.canAddToPlaylist - чи показувати дію «Додати до плейлиста».
- * @param {boolean} props.showAddedAt - чи показувати дату додавання до плейлиста.
- * @param {() => void} props.onPlay - відтворення / пауза.
- * @param {() => void} props.onAddToPlaylist - відкриття вікна «Додати до плейлиста».
- * @param {(() => Promise<void>)|undefined} props.onRemove - вилучення з плейлиста (якщо дія доступна).
- * @returns {JSX.Element} рядок.
- */
 function TrackRow({
   track,
   position,
@@ -52,11 +28,7 @@ function TrackRow({
   const removeLabel = t('tracks.removeFromPlaylist', { title: track.title });
   const addLabel = t('tracks.addToPlaylist', { title: track.title });
 
-  /**
-   * Вилучає трек; поки запит виконується, кнопка неактивна. Після успіху рядок прибирає
-   * батьківський компонент, тому стан скидається лише у разі помилки.
-   * @returns {Promise<void>}
-   */
+  //після успіху рядок прибирає батьківський компонент, тому стан скидається лише у разі помилки
   const handleRemove = async () => {
     setIsRemoving(true);
     try {
@@ -125,18 +97,6 @@ function TrackRow({
   );
 }
 
-/**
- * Нумерований список треків.
- * @param {object} props - властивості.
- * @param {object[]} props.tracks - треки.
- * @param {string} props.label - доступна назва списку (для програм читання з екрана).
- * @param {'default'|'playlist'} [props.variant='default'] - звичайний список або таблиця треків плейлиста.
- * @param {boolean} [props.showFavorite] - показувати сердечка (за замовчуванням — авторизованим).
- * @param {(track: object) => Promise<void>} [props.onRemove] - вилучення треку з плейлиста.
- * @param {(playlist: object, info: {created: boolean}) => void} [props.onAddedToPlaylist] - трек
- *   додано до плейлиста через «Додати до плейлиста».
- * @returns {JSX.Element} список.
- */
 export default function TrackList({
   tracks,
   label,

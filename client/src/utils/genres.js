@@ -1,10 +1,3 @@
-/**
- * @module utils/genres
- * @description Кольори плиток жанрів на сторінці пошуку (рис. 4.3 ТЗ, розділ «Дизайн» SPEC):
- * теплі й фіолетові тони гами «Захід сонця».
- */
-
-/** Градієнти плиток жанрів з макета. */
 const GENRE_GRADIENTS = Object.freeze({
   Електроніка: ['#ff7a59', '#e2553f'],
   Поп: ['#c04cfd', '#9333ea'],
@@ -16,15 +9,9 @@ const GENRE_GRADIENTS = Object.freeze({
   Класика: ['#4a3d6e', '#2e2550'],
 });
 
-/** Ті самі градієнти по порядку — для жанрів словника, яких немає на макеті. */
+//для жанрів словника, яких немає на макеті
 const FALLBACK_GRADIENTS = Object.values(GENRE_GRADIENTS);
 
-/**
- * Повертає CSS-градієнт плитки жанру.
- * @param {string} genre - назва жанру зі словника.
- * @param {number} index - позиція жанру у словнику (для жанрів поза макетом).
- * @returns {string} значення CSS `background`.
- */
 export function genreGradient(genre, index) {
   const [from, to] =
     GENRE_GRADIENTS[genre] ?? FALLBACK_GRADIENTS[index % FALLBACK_GRADIENTS.length];

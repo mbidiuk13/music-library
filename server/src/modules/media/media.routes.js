@@ -1,10 +1,3 @@
-/**
- * @module modules/media/media.routes
- * @description Маршрути Media Service і серверні правила валідації. Адміністративні маршрути
- * (`/api/admin/tracks`) підключаються в app.js після перевірок authenticate і requireRole('admin').
- * Ті самі правила валідації метаданих дублюються на клієнті (форма адмін-панелі).
- */
-
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { BPM_RANGE, GENRES, KEYS, MOODS, getYearRange } from '../../config/vocabularies.js';
@@ -14,22 +7,12 @@ import validate from '../../middleware/validate.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import * as controller from './media.controller.js';
 
-/** Максимальна довжина назви й виконавця (як у схемі БД). */
 const TEXT_MAX = 255;
 
-/** Максимальна довжина пошукового запиту. */
 const QUERY_MAX = 100;
 
-/** Розмір сторінки списків за замовчуванням і максимальний. */
 const PAGE_LIMIT = Object.freeze({ default: 20, max: 100 });
 
-/**
- * Правило для обов'язкового текстового поля (рядок 1–255 символів після trim).
- * @param {string} field - назва поля.
- * @param {string} emptyMessage - повідомлення, якщо поле порожнє.
- * @param {string} tooLongMessage - повідомлення, якщо текст задовгий.
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
 const requiredText = (field, emptyMessage, tooLongMessage) =>
   body(field)
     .isString()
@@ -42,28 +25,11 @@ const requiredText = (field, emptyMessage, tooLongMessage) =>
     .isLength({ max: TEXT_MAX })
     .withMessage(tooLongMessage);
 
-/**
- * Правило для поля зі словника (значення обирається зі списку, а не вводиться текстом).
- * @param {string} field - назва поля.
- * @param {readonly string[]} values - допустимі значення.
- * @param {string} message - повідомлення про помилку.
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
 const oneOf = (field, values, message) =>
   body(field).isString().withMessage(message).bail().isIn(values).withMessage(message);
 
-/**
- * Правило для цілого числа в діапазоні. Значення з форми (рядок) перетворюється на число.
- * @param {string} field - назва поля.
- * @param {() => {min: number, max: number}} getRange - межі діапазону (обчислюються під час запиту).
- * @param {(range: {min: number, max: number}) => string} formatMessage - текст помилки.
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
+//межі беруться з getRange під час кожної перевірки, а не фіксуються під час старту сервера
 const integerInRange = (field, getRange, formatMessage) => {
-  /**
-   * Текст помилки з актуальними межами діапазону (обчислюється під час кожної перевірки).
-   * @returns {string} повідомлення про помилку.
-   */
   const message = () => formatMessage(getRange());
   return body(field)
     .not()
@@ -81,7 +47,6 @@ const integerInRange = (field, getRange, formatMessage) => {
     .withMessage(message);
 };
 
-/** Правила для 7 полів метаданих треку (створення і редагування). */
 const trackMetadataRules = [
   requiredText('title', 'Введіть назву треку', `Назва не може бути довшою за ${TEXT_MAX} символів`),
   requiredText(
@@ -104,13 +69,8 @@ const trackMetadataRules = [
   ),
 ];
 
-/** Правило для ідентифікатора треку в шляху запиту. */
 const trackIdRule = param('id').isUUID().withMessage('Некоректний ідентифікатор треку');
 
-/**
- * Правило для необов'язкового пошукового запиту `q`.
- * @returns {import('express-validator').ValidationChain} ланцюжок перевірок.
- */
 const searchTextRule = () =>
   query('q')
     .optional()
@@ -121,7 +81,6 @@ const searchTextRule = () =>
     .isLength({ max: QUERY_MAX })
     .withMessage(`Пошуковий запит не може бути довшим за ${QUERY_MAX} символів`);
 
-/** Правила пагінації: `limit` (1–100, за замовчуванням 20) і `offset` (≥ 0, за замовчуванням 0). */
 const paginationRules = [
   query('limit')
     .default(PAGE_LIMIT.default)
@@ -137,13 +96,8 @@ const paginationRules = [
     .toInt(),
 ];
 
-/** Публічні маршрути треків: `/api/tracks`. */
 export const trackRouter = Router();
 
-/**
- * Пошук за назвою, виконавцем або жанром (`q`) та/або точний фільтр `genre`.
- * @route GET /api/tracks/search
- */
 trackRouter.get(
   '/search',
   searchTextRule(),
@@ -162,22 +116,11 @@ trackRouter.get(
   asyncHandler(controller.searchTracks),
 );
 
-/**
- * Метадані треку.
- * @route GET /api/tracks/:id
- */
 trackRouter.get('/:id', trackIdRule, validate, asyncHandler(controller.getTrack));
 
-/**
- * Pre-signed URL для відтворення.
- * @route GET /api/tracks/:id/stream
- */
 trackRouter.get('/:id/stream', trackIdRule, validate, asyncHandler(controller.getStreamUrl));
 
-/**
- * Облік відтворення: лічильник і (для авторизованого) історія прослуховувань.
- * @route POST /api/tracks/:id/play
- */
+//доступно й гостям; для авторизованого ще й пишеться історія прослуховувань
 trackRouter.post(
   '/:id/play',
   optionalAuth,
@@ -186,22 +129,13 @@ trackRouter.post(
   asyncHandler(controller.registerPlay),
 );
 
-/** Довідкові маршрути: `/api/meta`. */
 export const metaRouter = Router();
 
-/**
- * Словники жанрів, настроїв і тональностей.
- * @route GET /api/meta/vocabularies
- */
 metaRouter.get('/vocabularies', controller.getVocabularies);
 
-/** Маршрути адміністратора: `/api/admin/tracks`. */
+//доступ перевіряється в app.js: authenticate і requireRole('admin')
 export const adminTrackRouter = Router();
 
-/**
- * Список треків для адмін-панелі (пошук за ID або назвою).
- * @route GET /api/admin/tracks
- */
 adminTrackRouter.get(
   '/',
   searchTextRule(),
@@ -210,10 +144,6 @@ adminTrackRouter.get(
   asyncHandler(controller.listTracksForAdmin),
 );
 
-/**
- * Завантаження аудіо з метаданими (UC-9).
- * @route POST /api/admin/tracks
- */
 adminTrackRouter.post(
   '/',
   uploadAudio,
@@ -225,10 +155,6 @@ adminTrackRouter.post(
   asyncHandler(controller.createTrack),
 );
 
-/**
- * Модерація метаданих треку (UC-6).
- * @route PUT /api/admin/tracks/:id
- */
 adminTrackRouter.put(
   '/:id',
   trackIdRule,
@@ -237,8 +163,4 @@ adminTrackRouter.put(
   asyncHandler(controller.updateTrack),
 );
 
-/**
- * Видалення треку разом з аудіофайлом у S3.
- * @route DELETE /api/admin/tracks/:id
- */
 adminTrackRouter.delete('/:id', trackIdRule, validate, asyncHandler(controller.deleteTrack));

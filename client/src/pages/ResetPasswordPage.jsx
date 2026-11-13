@@ -1,12 +1,3 @@
-/**
- * @module pages/ResetPasswordPage
- * @description Встановлення нового пароля за посиланням з листа (UC-10, маршрут
- * `/reset-password?token=…`). Посилання перевіряється одразу при відкритті сторінки, тож
- * прострочене чи вже використане посилання показує повідомлення і пропозицію повторити запит
- * ще до заповнення форми. Новий пароль перевіряється за тими самими правилами, що й під час
- * реєстрації; після успішної зміни — toast-сповіщення і перехід на сторінку входу.
- */
-
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -20,14 +11,8 @@ import useRequest from '../hooks/useRequest.js';
 import { errorMessage } from '../utils/errors.js';
 import { validateNewPassword, validatePasswordConfirm } from '../utils/validation.js';
 
-/** Початкові значення полів форми. */
 const INITIAL_VALUES = Object.freeze({ password: '', passwordConfirm: '' });
 
-/**
- * Валідація форми — ті самі правила, що й у `POST /api/auth/reset-password`.
- * @param {typeof INITIAL_VALUES} values - значення полів.
- * @returns {Record<string, string|null>} ключі i18n помилок полів.
- */
 function validateReset({ password, passwordConfirm }) {
   return {
     password: validateNewPassword(password),
@@ -35,11 +20,6 @@ function validateReset({ password, passwordConfirm }) {
   };
 }
 
-/**
- * Чи означає помилка API, що сервер відхилив сам токен з посилання (а не мережа чи інші поля).
- * @param {{code?: string, details?: {field: string}[]}} err - помилка запиту.
- * @returns {boolean} true — посилання недійсне, прострочене або вже використане.
- */
 function isTokenRejected(err) {
   return (
     err?.code === 'INVALID_RESET_TOKEN' ||
@@ -47,10 +27,6 @@ function isTokenRejected(err) {
   );
 }
 
-/**
- * Повідомлення про недійсне посилання з пропозицією надіслати нове.
- * @returns {JSX.Element} блок повідомлення.
- */
 function InvalidLink() {
   const { t } = useTranslation();
   return (
@@ -65,10 +41,6 @@ function InvalidLink() {
   );
 }
 
-/**
- * Сторінка встановлення нового пароля.
- * @returns {JSX.Element} сторінка.
- */
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -76,7 +48,8 @@ export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
 
-  // Без токена перевіряти нічого — одразу показується повідомлення про недійсне посилання.
+  /*посилання перевіряється одразу, щоб недійсне виявити ще до заповнення форми;
+  без токена перевіряти нічого — одразу показується повідомлення*/
   const loadVerification = useMemo(
     () => (token ? (signal) => verifyResetToken(token, signal) : null),
     [token],
@@ -89,11 +62,6 @@ export default function ResetPasswordPage() {
   const [isTokenInvalid, setIsTokenInvalid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /**
-   * Надсилає новий пароль разом із токеном з посилання.
-   * @param {import('react').FormEvent<HTMLFormElement>} event - подія надсилання.
-   * @returns {Promise<void>}
-   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     touchAll();
@@ -110,7 +78,7 @@ export default function ResetPasswordPage() {
       navigate('/welcome', { replace: true });
     } catch (err) {
       setIsSubmitting(false);
-      // Посилання могло стати недійсним, поки форма була відкрита.
+      //посилання могло стати недійсним, поки форма була відкрита
       if (isTokenRejected(err)) {
         setIsTokenInvalid(true);
         return;

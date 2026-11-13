@@ -1,7 +1,7 @@
 /**
- * @file Спільна конфігурація ESLint для сервера (Node.js) і клієнта (React).
- * Правила форматування вимкнено — за них відповідає Prettier.
- */
+ * @file спільна конфігурація ESLint для сервера (Node.js) і клієнта (React).
+ * Правила форматування вимкнено — за них відповідає Prettier
+*/
 
 import js from '@eslint/js';
 import globals from 'globals';

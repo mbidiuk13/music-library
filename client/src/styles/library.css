@@ -1,6 +1,3 @@
-/* Медіатека (рис. 4.4 ТЗ), модальні вікна і спільні елементи сторінок керування. */
-
-/* ---------- Заголовок сторінки з кнопкою дії ---------- */
 .page-head {
   display: flex;
   flex-wrap: wrap;
@@ -16,7 +13,6 @@
   font-weight: 900;
 }
 
-/* ---------- Кнопки «Видалити» ---------- */
 .btn-danger,
 .btn-danger-outline {
   display: inline-flex;
@@ -53,7 +49,6 @@
   background: var(--danger-soft);
 }
 
-/* ---------- Модальне вікно (<dialog>) ---------- */
 .modal {
   width: min(440px, calc(100vw - 32px));
   max-height: calc(100dvh - 48px);
@@ -119,7 +114,6 @@
   gap: 10px;
 }
 
-/* ---------- Картки плейлистів ---------- */
 .page--library {
   display: flex;
   flex-direction: column;
@@ -193,7 +187,6 @@
   font-weight: 600;
 }
 
-/* «Улюблені»: градієнт «Захід сонця» і сердечко на напівпрозорому квадраті. */
 .playlist-card--favorites {
   border-color: transparent;
   background: linear-gradient(120deg, #ff7a59, #e2559a 55%, #c04cfd);
@@ -220,7 +213,6 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* ---------- Панель з треками плейлиста ---------- */
 .library-panel {
   display: flex;
   flex-direction: column;
@@ -270,7 +262,6 @@
   gap: 10px;
 }
 
-/* ---------- Таблиця треків плейлиста ---------- */
 .track-table--playlist .track-row {
   grid-template-columns:
     36px 56px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr)
@@ -330,7 +321,6 @@
   }
 }
 
-/* ---------- Вікно «Додати до плейлиста» ---------- */
 .picker__track {
   display: flex;
   align-items: center;
@@ -434,8 +424,8 @@
   color: var(--muted);
 }
 
-/* Підпис, поле й помилка — у лівій колонці, кнопка — праворуч на рівні поля введення
-   (навіть коли під полем з'являється текст помилки). */
+/*підпис, поле й помилка — у лівій колонці, кнопка — праворуч на рівні поля введення
+(навіть коли під полем з'являється текст помилки)*/
 .picker__create {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

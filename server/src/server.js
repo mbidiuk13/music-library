@@ -1,13 +1,8 @@
-/**
- * @module server
- * @description Точка входу бекенду: створює Express-застосунок і запускає HTTP-сервер.
- */
-
 import createApp from './app.js';
 import config from './config/index.js';
 import { getJwtSecret } from './utils/jwt.js';
 
-// Без ключа підпису JWT автентифікація неможлива — зупиняємо запуск з поясненням.
+//без ключа підпису JWT автентифікація неможлива — зупиняємо запуск з поясненням
 try {
   getJwtSecret();
 } catch (err) {
